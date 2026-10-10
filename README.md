@@ -39,7 +39,9 @@ docker compose up --build
 | `pnpm lint` | ESLint, incluida la regla de dependencias entre módulos |
 | `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm test:unit` | Tests sin dependencias externas |
-| `pnpm test:golden` | Fixtures del Pricing Engine (se llenan en M1) |
+| `pnpm test:golden` | Los 9 fixtures golden y los 16 inválidos del Pricing Engine, con igualdad exacta |
+| `pnpm fixtures:check` | Los fixtures contra el motor de referencia en Python (necesita Python 3) |
+| `pnpm pricing:calc <archivo.json>` | Calcula una cotización desde un archivo con la forma de un fixture |
 | `pnpm test:int` | Integración contra PostgreSQL real; crea y borra sus propias bases |
 | `pnpm test:contract` | La API implementada contra `contract/openapi.yaml` (se llena en M3) |
 | `pnpm test:e2e` | La aplicación completa por HTTP |
@@ -51,6 +53,22 @@ docker compose up --build
 | `pnpm ci:local` | Los mismos pasos que el CI de un PR |
 
 Los tests de integración y de extremo a extremo necesitan `docker compose up -d postgres`.
+
+## Pricing Engine
+
+`src/modules/pricing/domain` implementa `03_PRICING_ENGINE.md` v1.0.0 como una función pura:
+
+```ts
+calculate(input: PricingInput, config: EngineConfig): PricingResult // lanza PricingError(code)
+```
+
+Para cotizar a mano (por ejemplo en el concierge MVP):
+
+```bash
+pnpm -s pricing:calc caso.json
+```
+
+`caso.json` tiene `route`, `quote` y `vehicleCostProfile` con la forma de `contract/fixtures/pricing-engine-golden.json`. Sale con código 2 y el `code` en stderr si la entrada incumple una regla.
 
 ## Estructura
 
@@ -73,4 +91,6 @@ test/
 - **Esquema:** `contract/db/schema.sql` es la referencia. Un cambio de modelo es una migración nueva en `prisma/migrations/` más el cambio en la referencia; `pnpm db:check-schema` compara ambos catálogos.
 - **Módulos:** las dependencias permitidas están en `eslint.config.mjs` y reflejan `04_ARCHITECTURE.md` §2. `pricing` no puede importar framework, base de datos, red ni otros módulos.
 - **Inyección:** las dependencias de constructor llevan `@Inject(...)` explícito, para no depender de la emisión de metadatos de decoradores del transpilador.
+- **Dinero:** el dominio usa `Fraction` (`src/shared/fraction`), racional exacto sobre `BigInt`. Ni `number` ni decimales de precisión fija; el redondeo ocurre una sola vez, al serializar.
+- **Fixtures:** `contract/fixtures/*.json` no se editan a mano; `pnpm fixtures:check` los compara con el motor de referencia.
 - **Migraciones:** corren como job (`pnpm db:migrate`), nunca al arrancar la API.

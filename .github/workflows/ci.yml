@@ -72,6 +72,10 @@ jobs:
       - name: Golden del Pricing Engine
         run: pnpm test:golden
 
+      # Los fixtures deben coincidir con el motor de referencia: nadie los edita a mano.
+      - name: Fixtures contra el motor de referencia
+        run: pnpm fixtures:check
+
       # 6. Validacion del contrato y comparacion contra la rama base.
       - name: Validar openapi.yaml
         run: pnpm openapi:lint

@@ -66,7 +66,14 @@ const moduleBoundaries = MODULES.map((name) => {
 
 export default defineConfig(
   {
-    ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'src/generated/**', 'contract/**'],
+    ignores: [
+      'dist/**',
+      'coverage/**',
+      'node_modules/**',
+      'src/generated/**',
+      'contract/**',
+      '.superpowers/**',
+    ],
   },
   js.configs.recommended,
   tseslint.configs.recommended,
