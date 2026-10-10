@@ -22,6 +22,7 @@ INVALID = HERE / "pricing-engine-invalid.json"
 RAW_PLACES = 10
 MAX_RATE_SUM = F("0.90")
 MAX_WAITING_SECONDS = 10800
+MAX_ROUTE_VALUE = 2147483647  # entero de 32 bits: columnas int de quotes
 
 
 class PricingError(Exception):
@@ -56,6 +57,8 @@ def validate(route, quote, profile):
     if route["tripDistanceMeters"] <= 0 or route["tripDurationSeconds"] <= 0:
         raise PricingError("PRICING_INVALID_ROUTE")
     if route["pickupDistanceMeters"] < 0 or route["pickupDurationSeconds"] < 0:
+        raise PricingError("PRICING_INVALID_ROUTE")
+    if any(value > MAX_ROUTE_VALUE for value in route.values()):
         raise PricingError("PRICING_INVALID_ROUTE")
     if not 0 <= quote["waitingSeconds"] <= MAX_WAITING_SECONDS:
         raise PricingError("PRICING_INVALID_ROUTE")

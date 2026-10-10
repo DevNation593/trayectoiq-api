@@ -3,6 +3,8 @@ import { PricingError } from './errors.js';
 import type { ParsedInput } from './parse-input.js';
 
 const MAX_WAITING_SECONDS = Fraction.parse(10800);
+/** Mayor entero de 32 bits: las columnas de metros y segundos de `quotes` son `int`. */
+const MAX_ROUTE_VALUE = Fraction.parse(2_147_483_647);
 const MAX_RATE_SUM = Fraction.parse('0.90');
 
 const isPositive = (value: Fraction | null): boolean => value !== null && value.sign() > 0;
@@ -13,7 +15,7 @@ const isNegative = (value: Fraction): boolean => value.sign() < 0;
  * Lanza la primera que falle, para que el codigo devuelto sea determinista.
  */
 export function validate(input: ParsedInput): void {
-  // 1 a 3: ruta y espera.
+  // 1 a 4: ruta y espera.
   if (input.tripMeters.sign() <= 0 || input.tripSeconds.sign() <= 0) {
     throw new PricingError(
       'PRICING_INVALID_ROUTE',
@@ -23,6 +25,18 @@ export function validate(input: ParsedInput): void {
   if (isNegative(input.pickupMeters) || isNegative(input.pickupSeconds)) {
     throw new PricingError('PRICING_INVALID_ROUTE', 'La recogida no puede ser negativa');
   }
+  const routeValues = [
+    input.tripMeters,
+    input.tripSeconds,
+    input.pickupMeters,
+    input.pickupSeconds,
+  ];
+  if (routeValues.some((value) => value.compare(MAX_ROUTE_VALUE) > 0)) {
+    throw new PricingError(
+      'PRICING_INVALID_ROUTE',
+      'Los metros y segundos de la ruta no pueden superar 2147483647',
+    );
+  }
   if (isNegative(input.waitingSeconds) || input.waitingSeconds.compare(MAX_WAITING_SECONDS) > 0) {
     throw new PricingError(
       'PRICING_INVALID_ROUTE',
@@ -30,7 +44,7 @@ export function validate(input: ParsedInput): void {
     );
   }
 
-  // 4: probabilidad de regreso vacio.
+  // 5: probabilidad de regreso vacio.
   if (isNegative(input.returnProbability) || input.returnProbability.compare(Fraction.ONE) > 0) {
     throw new PricingError(
       'PRICING_INVALID_PROBABILITY',
@@ -38,7 +52,7 @@ export function validate(input: ParsedInput): void {
     );
   }
 
-  // 5: ningun monto negativo.
+  // 6: ningun monto negativo.
   const amounts = [
     input.tolls,
     input.parking,
@@ -57,7 +71,7 @@ export function validate(input: ParsedInput): void {
     throw new PricingError('PRICING_NEGATIVE_AMOUNT', 'Ningun monto puede ser negativo');
   }
 
-  // 6 a 10: divisores. Un divisor ausente cuenta como cero.
+  // 7 a 11: divisores. Un divisor ausente cuenta como cero.
   if (!isPositive(input.fuelEfficiency)) {
     throw new PricingError(
       'PRICING_DIVISOR_ZERO',
@@ -83,7 +97,7 @@ export function validate(input: ParsedInput): void {
     throw new PricingError('PRICING_DIVISOR_ZERO', 'Falta el kilometraje mensual esperado');
   }
 
-  // 11 y 12: tasas.
+  // 12 y 13: tasas.
   const rates = [
     input.platformCommissionRate,
     input.paymentPercentageRate,
