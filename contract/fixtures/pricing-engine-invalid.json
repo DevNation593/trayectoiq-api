@@ -1,0 +1,120 @@
+{
+  "pricingEngineVersion": "1.0.0",
+  "baseFixture": "A_moto_10km_negotiate",
+  "note": "Cada caso aplica 'overrides' (ruta -> valor) sobre baseFixture y debe fallar con expectedCode.",
+  "invalidFixtures": [
+    {
+      "name": "zero_trip_distance",
+      "overrides": {
+        "route.tripDistanceMeters": 0
+      },
+      "expectedCode": "PRICING_INVALID_ROUTE"
+    },
+    {
+      "name": "zero_trip_duration",
+      "overrides": {
+        "route.tripDurationSeconds": 0
+      },
+      "expectedCode": "PRICING_INVALID_ROUTE"
+    },
+    {
+      "name": "negative_pickup_distance",
+      "overrides": {
+        "route.pickupDistanceMeters": -1
+      },
+      "expectedCode": "PRICING_INVALID_ROUTE"
+    },
+    {
+      "name": "waiting_above_max",
+      "overrides": {
+        "quote.waitingSeconds": 10801
+      },
+      "expectedCode": "PRICING_INVALID_ROUTE"
+    },
+    {
+      "name": "return_probability_above_one",
+      "overrides": {
+        "quote.emptyReturnProbability": "1.01"
+      },
+      "expectedCode": "PRICING_INVALID_PROBABILITY"
+    },
+    {
+      "name": "negative_tolls",
+      "overrides": {
+        "quote.tollsAmount": "-0.01"
+      },
+      "expectedCode": "PRICING_NEGATIVE_AMOUNT"
+    },
+    {
+      "name": "negative_offer",
+      "overrides": {
+        "quote.offeredPrice": "-1"
+      },
+      "expectedCode": "PRICING_NEGATIVE_AMOUNT"
+    },
+    {
+      "name": "fuel_efficiency_zero",
+      "overrides": {
+        "vehicleCostProfile.fuelEfficiencyKmPerGallon": "0"
+      },
+      "expectedCode": "PRICING_DIVISOR_ZERO"
+    },
+    {
+      "name": "fuel_efficiency_null",
+      "overrides": {
+        "vehicleCostProfile.fuelEfficiencyKmPerGallon": null
+      },
+      "expectedCode": "PRICING_DIVISOR_ZERO"
+    },
+    {
+      "name": "maintenance_interval_zero",
+      "overrides": {
+        "vehicleCostProfile.maintenanceItems[0].intervalKm": "0"
+      },
+      "expectedCode": "PRICING_DIVISOR_ZERO"
+    },
+    {
+      "name": "tire_life_zero",
+      "overrides": {
+        "vehicleCostProfile.tireUsefulLifeKm": "0"
+      },
+      "expectedCode": "PRICING_DIVISOR_ZERO"
+    },
+    {
+      "name": "tire_life_null_with_cost",
+      "overrides": {
+        "vehicleCostProfile.tireUsefulLifeKm": null
+      },
+      "expectedCode": "PRICING_DIVISOR_ZERO"
+    },
+    {
+      "name": "remaining_useful_life_zero",
+      "overrides": {
+        "vehicleCostProfile.remainingUsefulLifeKm": "0"
+      },
+      "expectedCode": "PRICING_DIVISOR_ZERO"
+    },
+    {
+      "name": "monthly_km_null_with_fixed_cost",
+      "overrides": {
+        "vehicleCostProfile.expectedMonthlyKm": null
+      },
+      "expectedCode": "PRICING_DIVISOR_ZERO"
+    },
+    {
+      "name": "commission_rate_one",
+      "overrides": {
+        "vehicleCostProfile.platformCommissionRate": "1"
+      },
+      "expectedCode": "PRICING_INVALID_RATE"
+    },
+    {
+      "name": "fees_plus_margin_at_cap",
+      "overrides": {
+        "vehicleCostProfile.platformCommissionRate": "0.50",
+        "vehicleCostProfile.targetProfitMargin": "0.40"
+      },
+      "expectedCode": "PRICING_INVALID_RATE_SUM"
+    }
+  ]
+}

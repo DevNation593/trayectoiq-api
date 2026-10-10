@@ -1,0 +1,11 @@
+{
+  "repository": "trayectoiq-docs",
+  "commit": "72eddbcdab7eda238ba28afccea9b884e7aba688",
+  "files": [
+    "openapi.yaml",
+    "db/schema.sql",
+    "fixtures/pricing-engine-golden.json",
+    "fixtures/pricing-engine-invalid.json",
+    "fixtures/reference_engine.py"
+  ]
+}

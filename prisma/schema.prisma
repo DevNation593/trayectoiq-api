@@ -1,0 +1,435 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model admin_audit_logs {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actor_user_id String?  @db.Uuid
+  actor_email   String
+  action        String
+  target_type   String
+  target_id     String?
+  reason        String?
+  before_value  Json?
+  after_value   Json?
+  trace_id      String?
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  users         users?   @relation(fields: [actor_user_id], references: [id], onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "admin_audit_created_idx")
+}
+
+model analytics_events {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String?  @db.Uuid
+  anonymous_id  String?
+  event_name    String
+  event_version Int      @default(1)
+  properties    Json     @default("{}")
+  occurred_at   DateTime @db.Timestamptz(6)
+  received_at   DateTime @default(now()) @db.Timestamptz(6)
+  users         users?   @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([event_name, occurred_at], map: "analytics_events_name_time_idx")
+  @@index([user_id, occurred_at], map: "analytics_events_user_time_idx", where: raw("(user_id IS NOT NULL)"))
+}
+
+model app_config {
+  key        String   @id
+  value      Json
+  updated_by String?  @db.Uuid
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  users      users?   @relation(fields: [updated_by], references: [id], onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model auth_sessions {
+  id                          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                     String    @db.Uuid
+  refresh_token_hash          String    @unique
+  previous_refresh_token_hash String?   @unique
+  rotated_at                  DateTime? @db.Timestamptz(6)
+  device_label                String?
+  platform                    String?
+  app_version                 String?
+  ip_hash                     String?
+  user_agent_hash             String?
+  expires_at                  DateTime  @db.Timestamptz(6)
+  revoked_at                  DateTime? @db.Timestamptz(6)
+  revoked_reason              String?
+  created_at                  DateTime  @default(now()) @db.Timestamptz(6)
+  last_used_at                DateTime  @default(now()) @db.Timestamptz(6)
+  users                       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "auth_sessions_user_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model data_exports {
+  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String             @db.Uuid
+  status       data_export_status @default(PENDING)
+  storage_key  String?
+  error_code   String?
+  requested_at DateTime           @default(now()) @db.Timestamptz(6)
+  completed_at DateTime?          @db.Timestamptz(6)
+  expires_at   DateTime?          @db.Timestamptz(6)
+  users        users              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, requested_at(sort: Desc)], map: "data_exports_user_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model email_verification_codes {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  code_hash  String
+  attempts   Int       @default(0)
+  expires_at DateTime  @db.Timestamptz(6)
+  used_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, created_at(sort: Desc)], map: "email_verification_codes_user_idx")
+}
+
+model experiment_assignments {
+  user_id        String   @db.Uuid
+  experiment_key String
+  variant        String
+  assigned_at    DateTime @default(now()) @db.Timestamptz(6)
+  users          users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, experiment_key])
+}
+
+model feature_flags {
+  key         String   @id
+  value       Json
+  description String?
+  updated_by  String?  @db.Uuid
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  users       users?   @relation(fields: [updated_by], references: [id], onUpdate: NoAction)
+}
+
+model idempotency_keys {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String?  @db.Uuid
+  scope           String
+  idempotency_key String
+  request_hash    String
+  response_status Int?
+  response_body   Json?
+  expires_at      DateTime @db.Timestamptz(6)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  users           users?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, scope, idempotency_key])
+  @@index([expires_at], map: "idempotency_keys_expiry_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model maintenance_items {
+  id                    String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cost_profile_id       String                @db.Uuid
+  name                  String
+  cost                  Decimal               @db.Decimal(18, 6)
+  interval_km           Decimal               @db.Decimal(18, 6)
+  enabled               Boolean               @default(true)
+  created_at            DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime              @default(now()) @db.Timestamptz(6)
+  vehicle_cost_profiles vehicle_cost_profiles @relation(fields: [cost_profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([cost_profile_id], map: "maintenance_items_profile_idx")
+}
+
+model oauth_identities {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String         @db.Uuid
+  provider          oauth_provider
+  provider_subject  String
+  email_at_provider String?
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  users             users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([provider, provider_subject])
+}
+
+model password_reset_tokens {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  token_hash String    @unique
+  expires_at DateTime  @db.Timestamptz(6)
+  used_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model quote_cost_breakdowns {
+  quote_id                   String   @id @db.Uuid
+  fuel_cost                  Decimal  @db.Decimal(24, 10)
+  maintenance_cost           Decimal  @db.Decimal(24, 10)
+  tire_cost                  Decimal  @db.Decimal(24, 10)
+  depreciation_cost          Decimal  @db.Decimal(24, 10)
+  fixed_cost                 Decimal  @db.Decimal(24, 10)
+  tolls_cost                 Decimal  @db.Decimal(24, 10)
+  parking_cost               Decimal  @db.Decimal(24, 10)
+  other_cost                 Decimal  @db.Decimal(24, 10)
+  driver_target_compensation Decimal  @db.Decimal(24, 10)
+  created_at                 DateTime @default(now()) @db.Timestamptz(6)
+  quotes                     quotes   @relation(fields: [quote_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model quote_decisions {
+  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quote_id    String               @unique @db.Uuid
+  action      real_decision_action
+  final_price Decimal?             @db.Decimal(18, 6)
+  influence   influence_answer
+  notes       String?
+  decided_at  DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime             @default(now()) @db.Timestamptz(6)
+  quotes      quotes               @relation(fields: [quote_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model quote_usage_counters {
+  user_id    String   @db.Uuid
+  period_key String
+  used       Int      @default(0)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, period_key])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model quotes {
+  id                        String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                   String                         @db.Uuid
+  vehicle_id                String                         @db.Uuid
+  quote_request_id          String                         @unique @db.Uuid
+  pricing_engine_version    String
+  routing_provider          String
+  routing_profile           String
+  return_mode               String                         @default("SYMMETRIC_ESTIMATE")
+  currency                  String                         @default("USD") @db.Char(3)
+  pricing_input_snapshot    Json
+  pickup_lat                Decimal?                       @db.Decimal(10, 7)
+  pickup_lng                Decimal?                       @db.Decimal(10, 7)
+  destination_lat           Decimal?                       @db.Decimal(10, 7)
+  destination_lng           Decimal?                       @db.Decimal(10, 7)
+  pickup_label              String?
+  destination_label         String?
+  exact_location_expires_at DateTime?                      @db.Timestamptz(6)
+  pickup_distance_meters    Int                            @default(0)
+  pickup_duration_seconds   Int                            @default(0)
+  trip_distance_meters      Int
+  trip_duration_seconds     Int
+  waiting_seconds           Int                            @default(0)
+  empty_return_probability  Decimal                        @db.Decimal(9, 6)
+  offered_price             Decimal?                       @db.Decimal(18, 6)
+  tolls_amount              Decimal                        @default(0) @db.Decimal(18, 6)
+  parking_amount            Decimal                        @default(0) @db.Decimal(18, 6)
+  other_direct_cost_amount  Decimal                        @default(0) @db.Decimal(18, 6)
+  operating_cost_raw        Decimal                        @db.Decimal(24, 10)
+  floor_price_raw           Decimal                        @db.Decimal(24, 10)
+  minimum_price_raw         Decimal                        @db.Decimal(24, 10)
+  recommended_price_raw     Decimal                        @db.Decimal(24, 10)
+  floor_price               Decimal                        @db.Decimal(18, 2)
+  minimum_price             Decimal                        @db.Decimal(18, 2)
+  recommended_price         Decimal                        @db.Decimal(18, 2)
+  earnings_per_hour_raw     Decimal?                       @db.Decimal(24, 10)
+  earnings_per_km_raw       Decimal?                       @db.Decimal(24, 10)
+  recommendation            quote_decision_recommendation?
+  created_at                DateTime                       @default(now()) @db.Timestamptz(6)
+  quote_cost_breakdowns     quote_cost_breakdowns?
+  quote_decisions           quote_decisions?
+  users                     users                          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  vehicles                  vehicles                       @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([exact_location_expires_at], map: "quotes_location_expiry_idx", where: raw("(exact_location_expires_at IS NOT NULL)"))
+  @@index([user_id, created_at(sort: Desc)], map: "quotes_user_created_idx")
+}
+
+model subscription_transactions {
+  id                      String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscription_id         String?               @db.Uuid
+  provider                subscription_provider
+  provider_transaction_id String
+  event_type              String
+  raw_payload_hash        String
+  occurred_at             DateTime              @db.Timestamptz(6)
+  processed_at            DateTime              @default(now()) @db.Timestamptz(6)
+  subscriptions           subscriptions?        @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([provider, provider_transaction_id, event_type])
+}
+
+model subscriptions {
+  id                        String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                   String                      @db.Uuid
+  provider                  subscription_provider
+  product_id                String
+  provider_subscription_id  String
+  status                    subscription_status
+  entitlement_active        Boolean                     @default(false)
+  starts_at                 DateTime?                   @db.Timestamptz(6)
+  current_period_end        DateTime?                   @db.Timestamptz(6)
+  updated_at                DateTime                    @default(now()) @db.Timestamptz(6)
+  created_at                DateTime                    @default(now()) @db.Timestamptz(6)
+  subscription_transactions subscription_transactions[]
+  users                     users                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([provider, provider_subscription_id])
+  @@index([user_id], map: "subscriptions_user_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model users {
+  id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                    String
+  email_verified_at        DateTime?                  @db.Timestamptz(6)
+  password_hash            String?
+  display_name             String?
+  role                     user_role                  @default(USER)
+  country_code             String                     @default("EC") @db.Char(2)
+  currency                 String                     @default("USD") @db.Char(3)
+  timezone                 String                     @default("America/Guayaquil")
+  analytics_opt_out        Boolean                    @default(false)
+  status                   String                     @default("ACTIVE")
+  created_at               DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                   @default(now()) @db.Timestamptz(6)
+  deleted_at               DateTime?                  @db.Timestamptz(6)
+  admin_audit_logs         admin_audit_logs[]
+  analytics_events         analytics_events[]
+  app_config               app_config[]
+  auth_sessions            auth_sessions[]
+  data_exports             data_exports[]
+  email_verification_codes email_verification_codes[]
+  experiment_assignments   experiment_assignments[]
+  feature_flags            feature_flags[]
+  idempotency_keys         idempotency_keys[]
+  oauth_identities         oauth_identities[]
+  password_reset_tokens    password_reset_tokens[]
+  quote_usage_counters     quote_usage_counters[]
+  quotes                   quotes[]
+  subscriptions            subscriptions[]
+  vehicles                 vehicles?
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model vehicle_cost_profiles {
+  id                       String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vehicle_id               String              @unique(map: "one_active_cost_profile_per_vehicle", where: raw("(is_active = true)")) @db.Uuid
+  is_active                Boolean             @default(true)
+  fuel_price_per_gallon    Decimal             @default(0) @db.Decimal(18, 6)
+  tire_set_cost            Decimal             @default(0) @db.Decimal(18, 6)
+  tire_useful_life_km      Decimal?            @db.Decimal(18, 6)
+  monthly_fixed_cost       Decimal             @default(0) @db.Decimal(18, 6)
+  expected_monthly_km      Decimal?            @db.Decimal(18, 6)
+  target_hourly_income     Decimal             @default(0) @db.Decimal(18, 6)
+  platform_commission_rate Decimal             @default(0) @db.Decimal(9, 6)
+  payment_percentage_rate  Decimal             @default(0) @db.Decimal(9, 6)
+  payment_fixed_fee        Decimal             @default(0) @db.Decimal(18, 6)
+  target_profit_margin     Decimal             @default(0) @db.Decimal(9, 6)
+  created_at               DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime            @default(now()) @db.Timestamptz(6)
+  maintenance_items        maintenance_items[]
+  vehicles                 vehicles            @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model vehicles {
+  id                            String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                       String                 @unique(map: "one_default_vehicle_per_user", where: raw("is_default")) @db.Uuid
+  type                          vehicle_type
+  brand                         String?
+  model                         String?
+  year                          Int?
+  fuel_type                     fuel_type
+  fuel_efficiency_km_per_gallon Decimal                @db.Decimal(18, 6)
+  current_value                 Decimal                @default(0) @db.Decimal(18, 6)
+  expected_residual_value       Decimal                @default(0) @db.Decimal(18, 6)
+  remaining_useful_life_km      Decimal?               @db.Decimal(18, 6)
+  is_default                    Boolean                @default(false)
+  archived_at                   DateTime?              @db.Timestamptz(6)
+  created_at                    DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at                    DateTime               @default(now()) @db.Timestamptz(6)
+  quotes                        quotes[]
+  vehicle_cost_profiles         vehicle_cost_profiles?
+  users                         users                  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "vehicles_user_idx")
+}
+
+enum data_export_status {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  EXPIRED
+}
+
+enum fuel_type {
+  GASOLINE
+  DIESEL
+  HYBRID
+}
+
+enum influence_answer {
+  YES
+  NO
+  UNSURE
+}
+
+enum oauth_provider {
+  GOOGLE
+  APPLE
+}
+
+enum quote_decision_recommendation {
+  ACCEPT
+  NEGOTIATE
+  REJECT
+}
+
+enum real_decision_action {
+  ACCEPTED_ORIGINAL_OFFER
+  NEGOTIATED_AND_ACCEPTED
+  REJECTED
+  CANCELLED_BY_OTHER_PARTY
+  UNKNOWN
+}
+
+enum subscription_provider {
+  APPLE
+  GOOGLE
+}
+
+enum subscription_status {
+  ACTIVE
+  GRACE
+  CANCELLED
+  EXPIRED
+  REFUNDED
+}
+
+enum user_role {
+  USER
+  SUPPORT
+  ADMIN
+}
+
+enum vehicle_type {
+  MOTORCYCLE
+  CAR
+}

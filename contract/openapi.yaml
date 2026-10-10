@@ -1,0 +1,1375 @@
+openapi: 3.1.0
+info:
+  title: TrayectoIQ API
+  version: 1.0.0
+  description: |
+    Contrato MVP. Las fórmulas viven exclusivamente en 03_PRICING_ENGINE.md.
+    Dinero se representa como strings decimales para evitar IEEE-754.
+
+    Convenciones:
+    - Todo error usa `application/problem+json` con el esquema ProblemDetails; el catálogo de `code`
+      está en la descripción de ese esquema.
+    - Toda operación puede responder 429 (con cabecera Retry-After) y toda operación protegida 401.
+    - Los costos y ganancias se devuelven redondeados a 2 decimales HALF_UP; los umbrales según
+      03_PRICING_ENGINE.md §9.
+    - Cambios aditivos por defecto: los clientes deben ignorar campos y valores de enum desconocidos.
+servers:
+  - url: https://api.trayectoiq.com/v1
+    description: Production
+  - url: https://staging-api.trayectoiq.com/v1
+    description: Staging
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Auth
+    description: Registro, inicio de sesión, sesiones y verificación de email.
+  - name: Account
+    description: Perfil, exportación y eliminación de la cuenta.
+  - name: Vehicles
+    description: Vehículos y su perfil de costos.
+  - name: Places
+    description: Búsqueda y resolución de lugares.
+  - name: Quotes
+    description: Cotizaciones, historial y decisión real.
+  - name: Usage
+    description: Plan y cuota de cálculos de ruta.
+  - name: Subscriptions
+    description: Verificación de compras y notificaciones de las tiendas.
+  - name: Admin
+    description: Operaciones internas; requieren rol SUPPORT o ADMIN y quedan auditadas.
+  - name: Config
+    description: Configuración pública que la app consulta al iniciar.
+  - name: Analytics
+    description: Ingesta de eventos de producto generados en el cliente.
+
+paths:
+  /auth/register:
+    post:
+      security: []
+      tags: [Auth]
+      operationId: register
+      summary: Crear cuenta con email y contraseña
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/login:
+    post:
+      security: []
+      tags: [Auth]
+      operationId: login
+      summary: Iniciar sesión con email y contraseña
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/oauth/google:
+    post:
+      security: []
+      tags: [Auth]
+      operationId: loginGoogle
+      summary: Iniciar sesión con Google
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken, nonce]
+              properties:
+                idToken: { type: string }
+                nonce: { type: string }
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/oauth/apple:
+    post:
+      security: []
+      tags: [Auth]
+      operationId: loginApple
+      summary: Iniciar sesión con Apple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identityToken, authorizationCode, nonce]
+              properties:
+                identityToken: { type: string }
+                authorizationCode: { type: string }
+                nonce: { type: string }
+                givenName: { type: [string, 'null'] }
+                familyName: { type: [string, 'null'] }
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/refresh:
+    post:
+      security: []
+      tags: [Auth]
+      operationId: refreshSession
+      summary: Rotar el refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200':
+          description: Rotated tokens
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Cerrar la sesión actual
+      responses:
+        '204': { description: Session revoked }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/logout-all:
+    post:
+      tags: [Auth]
+      operationId: logoutAll
+      summary: Cerrar todas las sesiones
+      responses:
+        '204': { description: All sessions revoked }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/password/forgot:
+    post:
+      security: []
+      tags: [Auth]
+      operationId: forgotPassword
+      summary: Pedir recuperación de contraseña
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '202': { description: Accepted regardless of account existence }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/password/reset:
+    post:
+      security: []
+      tags: [Auth]
+      operationId: resetPassword
+      summary: Cambiar la contraseña con un token de recuperación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token: { type: string }
+                newPassword: { type: string, minLength: 10 }
+      responses:
+        '204': { description: Password reset }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/email/verify:
+    post:
+      tags: [Auth]
+      operationId: verifyEmail
+      summary: Verificar el email con un código
+      description: |
+        Verifica el email con el código de 6 dígitos enviado al registrarse. Una cuenta creada con
+        email/password no puede pedir previews hasta verificar (403 EMAIL_NOT_VERIFIED). Los logins
+        con Google/Apple cuyo email viene verificado por el proveedor no pasan por este paso.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, pattern: '^[0-9]{6}$' }
+      responses:
+        '204': { description: Email verified }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/email/resend:
+    post:
+      tags: [Auth]
+      operationId: resendEmailVerification
+      summary: Reenviar el código de verificación
+      responses:
+        '202': { description: Code sent if the email is still unverified }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /me:
+    get:
+      tags: [Account]
+      operationId: getMe
+      summary: Obtener el perfil del usuario
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+    delete:
+      tags: [Account]
+      operationId: deleteMyAccount
+      summary: Eliminar la cuenta
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '204': { description: Account deletion requested/completed }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /me/export:
+    post:
+      tags: [Account]
+      operationId: requestDataExport
+      summary: Pedir una exportación de datos
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202':
+          description: Export job accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [exportId, status]
+                properties:
+                  exportId: { type: string, format: uuid }
+                  status: { type: string, enum: [PENDING, PROCESSING, READY, FAILED] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /me/export/{exportId}:
+    get:
+      tags: [Account]
+      operationId: getDataExport
+      summary: Consultar el estado de una exportación
+      parameters:
+        - in: path
+          name: exportId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Export status; downloadUrl only when READY
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [exportId, status]
+                properties:
+                  exportId: { type: string, format: uuid }
+                  status: { type: string, enum: [PENDING, PROCESSING, READY, FAILED, EXPIRED] }
+                  downloadUrl: { type: [string, 'null'], format: uri }
+                  expiresAt: { type: [string, 'null'], format: date-time }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /vehicles:
+    get:
+      tags: [Vehicles]
+      operationId: listVehicles
+      summary: Listar vehículos no archivados
+      responses:
+        '200':
+          description: Vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Vehicle' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+    post:
+      tags: [Vehicles]
+      operationId: createVehicle
+      summary: Crear un vehículo con su perfil de costos
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VehicleUpsert' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Vehicle' }
+        '409':
+          description: VEHICLE_LIMIT_REACHED (1 vehículo no archivado en trial; 5 en Pro)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /vehicles/{vehicleId}:
+    parameters:
+      - $ref: '#/components/parameters/VehicleId'
+    get:
+      tags: [Vehicles]
+      operationId: getVehicle
+      summary: Obtener un vehículo
+      responses:
+        '200':
+          description: Vehicle
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Vehicle' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+    put:
+      tags: [Vehicles]
+      operationId: updateVehicle
+      summary: Reemplazar un vehículo y su perfil de costos
+      description: Reemplazo completo del vehículo y de su perfil de costos. No altera cotizaciones ya guardadas.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VehicleUpsert' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Vehicle' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+    delete:
+      tags: [Vehicles]
+      operationId: archiveVehicle
+      summary: Archivar un vehículo
+      description: |
+        Archiva el vehículo (no hay borrado físico: las cotizaciones guardadas lo referencian).
+        Deja de aparecer en GET /vehicles y de contar para el límite del plan.
+      responses:
+        '204': { description: Archived }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /places/autocomplete:
+    get:
+      tags: [Places]
+      operationId: autocompletePlaces
+      summary: Sugerir lugares mientras se escribe
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 120 }
+        - in: query
+          name: lat
+          schema: { type: number, minimum: -90, maximum: 90 }
+        - in: query
+          name: lng
+          schema: { type: number, minimum: -180, maximum: 180 }
+      responses:
+        '200':
+          description: Suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 10
+                items: { $ref: '#/components/schemas/PlaceSuggestion' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /places/{placeId}:
+    get:
+      tags: [Places]
+      operationId: resolvePlace
+      summary: Resolver un lugar a coordenadas
+      parameters:
+        - in: path
+          name: placeId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Resolved location
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ResolvedPlace' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /quotes/preview:
+    post:
+      tags: [Quotes]
+      operationId: previewQuote
+      summary: Calcular una cotización sin guardarla
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuotePreviewRequest' }
+      responses:
+        '200':
+          description: Non-persistent quote preview
+          headers:
+            X-Quote-Request-Id:
+              schema: { type: string, format: uuid }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuotePreviewResponse' }
+        '402':
+          description: QUOTA_EXHAUSTED. Solo aplica a rutas nuevas; recalcular con routeToken no consume cuota.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '403':
+          description: EMAIL_NOT_VERIFIED
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /quotes:
+    get:
+      tags: [Quotes]
+      operationId: listQuotes
+      summary: Listar cotizaciones guardadas
+      parameters:
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Saved quote history
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/SavedQuote' }
+                  nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+    post:
+      tags: [Quotes]
+      operationId: saveQuote
+      summary: Guardar una cotización a partir de un preview
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [previewToken]
+              properties:
+                previewToken: { type: string, description: Signed short-lived token from preview response }
+      responses:
+        '201':
+          description: Saved. Guardar el mismo preview dos veces devuelve la cotización ya creada.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SavedQuote' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422':
+          description: PREVIEW_TOKEN_EXPIRED o PREVIEW_TOKEN_INVALID
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /quotes/{quoteId}:
+    get:
+      tags: [Quotes]
+      operationId: getQuote
+      summary: Obtener una cotización guardada
+      parameters:
+        - $ref: '#/components/parameters/QuoteId'
+      responses:
+        '200':
+          description: Saved quote
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SavedQuote' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /quotes/{quoteId}/decision:
+    post:
+      tags: [Quotes]
+      operationId: recordQuoteDecision
+      summary: Registrar la decisión real sobre una cotización
+      description: |
+        Registra qué hizo realmente el usuario. Una decisión por cotización: un segundo POST dentro de las
+        24 h siguientes a la creación de la cotización reemplaza la anterior; después responde 409 DECISION_LOCKED.
+      parameters:
+        - $ref: '#/components/parameters/QuoteId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuoteDecisionRequest' }
+      responses:
+        '200':
+          description: Decision recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuoteDecision' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /usage/quote-quota:
+    get:
+      tags: [Usage]
+      operationId: getQuoteQuota
+      summary: Consultar el plan y la cuota de rutas
+      responses:
+        '200':
+          description: Current entitlement/quota
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [plan, limit, used, remaining, resetAt]
+                description: |
+                  La unidad de cuota es un cálculo de ruta exitoso. TRIAL: límite de por vida (resetAt null).
+                  PRO: límite mensual de uso razonable, se reinicia el día 1 a las 00:00 UTC.
+                properties:
+                  plan: { type: string, enum: [TRIAL, PRO] }
+                  limit: { type: integer, minimum: 0 }
+                  used: { type: integer, minimum: 0 }
+                  remaining: { type: integer, minimum: 0 }
+                  resetAt: { type: [string, 'null'], format: date-time }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /subscriptions/apple/verify:
+    post:
+      tags: [Subscriptions]
+      operationId: verifyApplePurchase
+      summary: Verificar una compra de App Store
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [signedTransactionInfo]
+              properties:
+                signedTransactionInfo: { type: string }
+      responses:
+        '200':
+          description: Entitlement
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SubscriptionEntitlement' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /subscriptions/google/verify:
+    post:
+      tags: [Subscriptions]
+      operationId: verifyGooglePurchase
+      summary: Verificar una compra de Google Play
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, purchaseToken]
+              properties:
+                productId: { type: string }
+                purchaseToken: { type: string }
+      responses:
+        '200':
+          description: Entitlement
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SubscriptionEntitlement' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /subscriptions/restore:
+    post:
+      tags: [Subscriptions]
+      operationId: restorePurchases
+      summary: Restaurar compras
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider]
+              properties:
+                provider: { type: string, enum: [APPLE, GOOGLE] }
+                signedTransactionInfo: { type: string }
+                purchaseToken: { type: string }
+                productId: { type: string }
+      responses:
+        '200':
+          description: Entitlement
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SubscriptionEntitlement' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /webhooks/apple:
+    post:
+      security: []
+      tags: [Subscriptions]
+      operationId: appleServerNotification
+      summary: Recibir notificaciones de App Store
+      description: |
+        App Store Server Notifications V2. Sin bearer: la autenticidad se verifica con la firma JWS de
+        `signedPayload` contra la cadena de certificados de Apple. Idempotente por notificationUUID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '204': { description: Processed/idempotent }
+        '401':
+          description: Firma o token de origen inválido; la notificación se descarta.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  /webhooks/google:
+    post:
+      security: []
+      tags: [Subscriptions]
+      operationId: googleServerNotification
+      summary: Recibir notificaciones de Google Play
+      description: |
+        Real-time Developer Notifications vía push de Pub/Sub. Sin bearer de la app: se valida el token OIDC
+        de Pub/Sub (issuer, audience y cuenta de servicio configurada). Idempotente por messageId.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '204': { description: Processed/idempotent }
+        '401':
+          description: Firma o token de origen inválido; la notificación se descarta.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  /app-config:
+    get:
+      security: []
+      tags: [Config]
+      operationId: getAppConfig
+      summary: Obtener la configuración pública de la app
+      responses:
+        '200':
+          description: Public client configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [maintenanceMode, trialQuoteLimit, minIosVersion, minAndroidVersion]
+                properties:
+                  maintenanceMode: { type: boolean }
+                  trialQuoteLimit: { type: integer }
+                  minIosVersion: { type: string }
+                  minAndroidVersion: { type: string }
+                  publicFlags: { type: object, additionalProperties: true }
+                  costPresets:
+                    type: object
+                    description: |
+                      Valores sugeridos de perfil de costos por tipo de vehículo (MOTORCYCLE, CAR) para prellenar
+                      el onboarding (02_PRD_MVP.md RF-03). Misma forma que VehicleCostProfile más los campos de
+                      eficiencia y vida útil. Son sugerencias editables, no datos del usuario.
+                    additionalProperties: true
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /events:
+    post:
+      security: [{}, { bearerAuth: [] }]
+      tags: [Analytics]
+      operationId: ingestEvents
+      summary: Enviar eventos de producto del cliente
+      description: |
+        Ingesta de eventos de producto generados en el cliente (08_ANALYTICS_VALIDATION.md §2).
+        Funciona sin sesión (onboarding) con anonymousId; con un bearer válido los eventos se asocian al usuario.
+        Los eventos de servidor (previews, decisiones, suscripciones verificadas) no pasan por aquí.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventBatch' }
+      responses:
+        '202': { description: Accepted. Los eventos con nombre o propiedades no permitidas se descartan. }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      operationId: adminSearchUsers
+      summary: Buscar usuarios
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        '200':
+          description: Admin user search
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /admin/users/{userId}/suspension:
+    put:
+      tags: [Admin]
+      operationId: adminSetSuspension
+      summary: Suspender o reactivar un usuario
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [suspended, reason]
+              properties:
+                suspended: { type: boolean }
+                reason: { type: string, minLength: 5, maxLength: 500 }
+      responses:
+        '204': { description: Updated and audited }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /admin/feature-flags/{key}:
+    put:
+      tags: [Admin]
+      operationId: setFeatureFlag
+      summary: Cambiar un feature flag
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties:
+                value: {}
+                reason: { type: string }
+      responses:
+        '200': { description: Updated and audited }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /admin/app-config/{key}:
+    put:
+      tags: [Admin]
+      operationId: setAppConfig
+      summary: Cambiar un valor de configuración
+      description: Cambia un valor de app_config (límites de cuota, paso de redondeo, versiones mínimas). Queda auditado.
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value, reason]
+              properties:
+                value: {}
+                reason: { type: string, minLength: 5, maxLength: 500 }
+      responses:
+        '200': { description: Updated and audited }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /admin/audit-logs:
+    get:
+      tags: [Admin]
+      operationId: listAuditLogs
+      summary: Listar el registro de auditoría
+      responses:
+        '200': { description: Audit logs }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /admin/providers/health:
+    get:
+      tags: [Admin]
+      operationId: adminProviderHealth
+      summary: Consultar la salud de los proveedores de rutas y direcciones
+      responses:
+        '200': { description: Routing/geocoder provider health }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 128 }
+    VehicleId:
+      in: path
+      name: vehicleId
+      required: true
+      schema: { type: string, format: uuid }
+    QuoteId:
+      in: path
+      name: quoteId
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    Unauthorized:
+      description: Authentication failed
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Conflict:
+      description: Conflict/idempotency mismatch/state conflict
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    ValidationError:
+      description: Schema or domain validation error
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    ServiceUnavailable:
+      description: External/internal provider temporarily unavailable
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema: { type: integer, minimum: 1 }
+          description: Segundos hasta poder reintentar
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  schemas:
+    DecimalString:
+      type: string
+      pattern: '^-?[0-9]+(\.[0-9]+)?$'
+      examples: ['2.7500', '-0.43']
+
+    NonNegativeMoney:
+      type: string
+      pattern: '^[0-9]{1,12}(\.[0-9]{1,6})?$'
+      examples: ['0', '2.75']
+
+    PositiveDecimal:
+      type: string
+      description: Decimal estrictamente mayor que 0 (se valida en dominio; el patrón solo acota la forma).
+      pattern: '^[0-9]{1,12}(\.[0-9]{1,6})?$'
+      examples: ['110', '3000']
+
+    Rate:
+      type: string
+      description: Tasa en [0,1). La suma de las tres tasas del perfil debe ser menor que 0.90.
+      pattern: '^0(\.[0-9]{1,6})?$'
+      examples: ['0', '0.10']
+
+    ProblemDetails:
+      type: object
+      required: [type, title, status, code, traceId]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        code:
+          type: string
+          description: |
+            Catálogo v1 (los clientes deben tratar un código desconocido como error genérico):
+            - Auth: AUTH_INVALID_CREDENTIALS, AUTH_TOKEN_EXPIRED, AUTH_SESSION_REVOKED, EMAIL_ALREADY_REGISTERED,
+              EMAIL_NOT_VERIFIED, EMAIL_CODE_INVALID, ACCOUNT_SUSPENDED, FORBIDDEN.
+            - Genéricos: VALIDATION_FAILED, NOT_FOUND, RATE_LIMITED, IDEMPOTENCY_KEY_REUSED, INTERNAL_ERROR.
+            - Vehículos: VEHICLE_LIMIT_REACHED.
+            - Rutas: ROUTE_UNAVAILABLE (422, no hay ruta entre los puntos), PLACE_NOT_FOUND,
+              ROUTING_PROVIDER_UNAVAILABLE (503), OUT_OF_SERVICE_AREA.
+            - Cotización: QUOTE_INVALID_ROUTE_INPUT, ROUTE_TOKEN_EXPIRED, PREVIEW_TOKEN_EXPIRED,
+              PREVIEW_TOKEN_INVALID, QUOTA_EXHAUSTED (402), DECISION_LOCKED.
+            - Pricing (03_PRICING_ENGINE.md §14): PRICING_INVALID_ROUTE, PRICING_INVALID_PROBABILITY,
+              PRICING_NEGATIVE_AMOUNT, PRICING_DIVISOR_ZERO, PRICING_INVALID_RATE, PRICING_INVALID_RATE_SUM,
+              PRICING_UNSUPPORTED_CURRENCY.
+            - Suscripciones: PURCHASE_INVALID, PURCHASE_ALREADY_LINKED.
+          examples: [PRICING_DIVISOR_ZERO]
+        traceId: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [code, message]
+            properties:
+              field: { type: string }
+              code: { type: string }
+              message: { type: string }
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 10 }
+        displayName: { type: string, maxLength: 100 }
+        deviceLabel: { type: string }
+        platform: { type: string, enum: [IOS, ANDROID] }
+        appVersion: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+        deviceLabel: { type: string }
+        platform: { type: string, enum: [IOS, ANDROID] }
+        appVersion: { type: string }
+
+    AuthResponse:
+      type: object
+      required: [accessToken, refreshToken, expiresInSeconds, user]
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        expiresInSeconds: { type: integer }
+        user: { $ref: '#/components/schemas/User' }
+
+    User:
+      type: object
+      required: [id, email, emailVerified, role, countryCode, currency, timezone]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        emailVerified: { type: boolean }
+        displayName: { type: [string, 'null'] }
+        role: { type: string, enum: [USER, SUPPORT, ADMIN] }
+        countryCode: { type: string, enum: [EC] }
+        currency: { type: string, enum: [USD] }
+        timezone: { type: string, enum: [America/Guayaquil] }
+
+    MaintenanceItem:
+      type: object
+      required: [name, cost, intervalKm, enabled]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        cost: { $ref: '#/components/schemas/NonNegativeMoney' }
+        intervalKm: { $ref: '#/components/schemas/PositiveDecimal' }
+        enabled: { type: boolean }
+
+    VehicleCostProfile:
+      type: object
+      required:
+        - fuelPricePerGallon
+        - tireSetCost
+        - monthlyFixedCost
+        - targetHourlyIncome
+        - platformCommissionRate
+        - paymentPercentageRate
+        - paymentFixedFee
+        - targetProfitMargin
+        - maintenanceItems
+      properties:
+        fuelPricePerGallon: { $ref: '#/components/schemas/NonNegativeMoney' }
+        tireSetCost: { $ref: '#/components/schemas/NonNegativeMoney' }
+        tireUsefulLifeKm:
+          description: Obligatorio y > 0 si tireSetCost > 0.
+          oneOf:
+            - $ref: '#/components/schemas/PositiveDecimal'
+            - type: 'null'
+        monthlyFixedCost: { $ref: '#/components/schemas/NonNegativeMoney' }
+        expectedMonthlyKm:
+          description: Obligatorio y > 0 si monthlyFixedCost > 0.
+          oneOf:
+            - $ref: '#/components/schemas/PositiveDecimal'
+            - type: 'null'
+        targetHourlyIncome: { $ref: '#/components/schemas/NonNegativeMoney' }
+        platformCommissionRate: { $ref: '#/components/schemas/Rate' }
+        paymentPercentageRate: { $ref: '#/components/schemas/Rate' }
+        paymentFixedFee: { $ref: '#/components/schemas/NonNegativeMoney' }
+        targetProfitMargin: { $ref: '#/components/schemas/Rate' }
+        maintenanceItems:
+          type: array
+          maxItems: 50
+          items: { $ref: '#/components/schemas/MaintenanceItem' }
+
+    VehicleUpsert:
+      type: object
+      required: [type, fuelType, fuelEfficiencyKmPerGallon, currentValue, expectedResidualValue, costProfile]
+      properties:
+        type: { type: string, enum: [MOTORCYCLE, CAR] }
+        brand: { type: string }
+        model: { type: string }
+        year: { type: integer, minimum: 1950, maximum: 2100 }
+        fuelType: { type: string, enum: [GASOLINE, DIESEL, HYBRID] }
+        fuelEfficiencyKmPerGallon: { $ref: '#/components/schemas/PositiveDecimal' }
+        isDefault: { type: boolean, default: false, description: Vehículo preseleccionado al cotizar; uno por usuario. }
+        currentValue: { $ref: '#/components/schemas/NonNegativeMoney' }
+        expectedResidualValue: { $ref: '#/components/schemas/NonNegativeMoney' }
+        remainingUsefulLifeKm:
+          description: Obligatorio y > 0 si currentValue > expectedResidualValue.
+          oneOf:
+            - $ref: '#/components/schemas/PositiveDecimal'
+            - type: 'null'
+        costProfile: { $ref: '#/components/schemas/VehicleCostProfile' }
+
+    Vehicle:
+      allOf:
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string, format: uuid }
+        - $ref: '#/components/schemas/VehicleUpsert'
+
+    PlaceSuggestion:
+      type: object
+      required: [id, label]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        secondaryLabel: { type: string }
+
+    ResolvedPlace:
+      type: object
+      required: [id, label, lat, lng]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        lat: { type: number, minimum: -90, maximum: 90 }
+        lng: { type: number, minimum: -180, maximum: 180 }
+
+    LocationInput:
+      oneOf:
+        - type: object
+          required: [placeId]
+          additionalProperties: false
+          properties:
+            placeId: { type: string }
+        - type: object
+          required: [lat, lng]
+          additionalProperties: false
+          properties:
+            lat: { type: number, minimum: -90, maximum: 90 }
+            lng: { type: number, minimum: -180, maximum: 180 }
+            label: { type: string }
+
+    QuotePreviewRequest:
+      type: object
+      description: |
+        Dos formas válidas:
+        1. Ruta nueva: pickupMode + pickup + destination (+ currentLocation si pickupMode = CURRENT_LOCATION).
+           Calcula la ruta y consume una unidad de cuota si el cálculo tiene éxito.
+        2. Recalcular: routeToken de un preview anterior. No llama al motor de rutas ni consume cuota;
+           pickupMode, pickup, destination y currentLocation se ignoran.
+        Cualquier otra combinación responde 422 QUOTE_INVALID_ROUTE_INPUT.
+      required: [vehicleId, waitingSeconds, emptyReturnProbability, tollsAmount, parkingAmount, otherDirectCostAmount]
+      properties:
+        vehicleId: { type: string, format: uuid }
+        routeToken: { type: string, description: Token firmado de un preview anterior; válido 15 minutos. }
+        pickupMode: { type: string, enum: [AT_PICKUP, CURRENT_LOCATION] }
+        currentLocation:
+          $ref: '#/components/schemas/LocationInput'
+        pickup:
+          $ref: '#/components/schemas/LocationInput'
+        destination:
+          $ref: '#/components/schemas/LocationInput'
+        offeredPrice:
+          oneOf:
+            - $ref: '#/components/schemas/NonNegativeMoney'
+            - type: 'null'
+        waitingSeconds: { type: integer, minimum: 0, maximum: 10800 }
+        emptyReturnProbability: { type: string, enum: ['0', '0.25', '0.5', '0.75', '1'] }
+        tollsAmount: { $ref: '#/components/schemas/NonNegativeMoney' }
+        parkingAmount: { $ref: '#/components/schemas/NonNegativeMoney' }
+        otherDirectCostAmount: { $ref: '#/components/schemas/NonNegativeMoney' }
+
+    CostBreakdown:
+      type: object
+      description: |
+        Valores a 2 decimales HALF_UP, cada uno redondeado por separado. `operating` puede diferir en centavos
+        de la suma de sus componentes; el cliente lo muestra tal cual. `targetCompensation` (W) no es parte de `operating`.
+      required: [fuel, maintenance, tires, depreciation, fixed, tolls, parking, other, operating, targetCompensation]
+      properties:
+        fuel: { $ref: '#/components/schemas/DecimalString' }
+        maintenance: { $ref: '#/components/schemas/DecimalString' }
+        tires: { $ref: '#/components/schemas/DecimalString' }
+        depreciation: { $ref: '#/components/schemas/DecimalString' }
+        fixed: { $ref: '#/components/schemas/DecimalString' }
+        tolls: { $ref: '#/components/schemas/DecimalString' }
+        parking: { $ref: '#/components/schemas/DecimalString' }
+        other: { $ref: '#/components/schemas/DecimalString' }
+        operating: { $ref: '#/components/schemas/DecimalString' }
+        targetCompensation: { $ref: '#/components/schemas/DecimalString' }
+
+    QuoteResult:
+      type: object
+      required: [pricingEngineVersion, currency, route, costs, pricing]
+      properties:
+        pricingEngineVersion: { type: string }
+        currency: { type: string, enum: [USD] }
+        route:
+          type: object
+          required: [pickupDistanceMeters, pickupDurationSeconds, tripDistanceMeters, tripDurationSeconds, effectiveDistanceMeters, effectiveDurationSeconds, returnMode]
+          properties:
+            pickupDistanceMeters: { type: integer }
+            pickupDurationSeconds: { type: integer }
+            tripDistanceMeters: { type: integer }
+            tripDurationSeconds: { type: integer }
+            effectiveDistanceMeters: { type: integer, description: D × 1000 redondeado HALF_UP }
+            effectiveDurationSeconds: { type: integer, description: H × 3600 redondeado HALF_UP }
+            returnMode: { type: string, enum: [SYMMETRIC_ESTIMATE] }
+            routingProvider: { type: string }
+            routingProfile: { type: string }
+        costs: { $ref: '#/components/schemas/CostBreakdown' }
+        pricing:
+          type: object
+          required: [floor, minimum, recommended]
+          properties:
+            floor: { $ref: '#/components/schemas/DecimalString' }
+            minimum: { $ref: '#/components/schemas/DecimalString' }
+            recommended: { $ref: '#/components/schemas/DecimalString' }
+        offeredPrice: { type: [string, 'null'] }
+        earningsPerHour: { type: [string, 'null'] }
+        earningsPerKm: { type: [string, 'null'] }
+        recommendation:
+          type: [string, 'null']
+          enum: [ACCEPT, NEGOTIATE, REJECT, null]
+        disclaimer: { type: string }
+
+    QuotePreviewResponse:
+      allOf:
+        - type: object
+          required: [quoteRequestId, previewToken, routeToken, expiresAt, quota]
+          properties:
+            quoteRequestId: { type: string, format: uuid }
+            previewToken: { type: string, description: Firmado; sirve para guardar este resultado exacto con POST /quotes. }
+            routeToken: { type: string, description: Firmado; sirve para recalcular sobre la misma ruta sin consumir cuota. }
+            expiresAt: { type: string, format: date-time, description: Vencimiento de ambos tokens (15 minutos). }
+            quota:
+              type: object
+              required: [plan, remaining]
+              properties:
+                plan: { type: string, enum: [TRIAL, PRO] }
+                remaining: { type: integer, minimum: 0 }
+        - $ref: '#/components/schemas/QuoteResult'
+
+    SavedQuote:
+      allOf:
+        - type: object
+          required: [id, createdAt]
+          properties:
+            id: { type: string, format: uuid }
+            createdAt: { type: string, format: date-time }
+            decision:
+              oneOf:
+                - $ref: '#/components/schemas/QuoteDecision'
+                - type: 'null'
+        - $ref: '#/components/schemas/QuoteResult'
+
+    QuoteDecisionRequest:
+      type: object
+      required: [action, influence]
+      properties:
+        action:
+          type: string
+          enum: [ACCEPTED_ORIGINAL_OFFER, NEGOTIATED_AND_ACCEPTED, REJECTED, CANCELLED_BY_OTHER_PARTY, UNKNOWN]
+        finalPrice:
+          oneOf:
+            - $ref: '#/components/schemas/NonNegativeMoney'
+            - type: 'null'
+          description: |
+            Obligatorio en ACCEPTED_ORIGINAL_OFFER y NEGOTIATED_AND_ACCEPTED. ACCEPTED_ORIGINAL_OFFER solo es válido
+            si la cotización tiene offeredPrice.
+        influence: { type: string, enum: [YES, NO, UNSURE] }
+        notes: { type: string, maxLength: 500 }
+
+    QuoteDecision:
+      allOf:
+        - type: object
+          required: [decidedAt]
+          properties:
+            decidedAt: { type: string, format: date-time }
+        - $ref: '#/components/schemas/QuoteDecisionRequest'
+
+    AnalyticsEvent:
+      type: object
+      required: [name, occurredAt]
+      properties:
+        name:
+          type: string
+          enum: [app_opened, onboarding_started, paywall_viewed, subscription_started]
+        version: { type: integer, minimum: 1, default: 1 }
+        occurredAt: { type: string, format: date-time }
+        properties:
+          type: object
+          maxProperties: 20
+          additionalProperties:
+            type: [string, number, boolean, 'null']
+
+    EventBatch:
+      type: object
+      required: [anonymousId, events]
+      properties:
+        anonymousId: { type: string, minLength: 16, maxLength: 64, description: Id aleatorio por instalación; no es un identificador de dispositivo. }
+        events:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items: { $ref: '#/components/schemas/AnalyticsEvent' }
+
+    SubscriptionEntitlement:
+      type: object
+      required: [provider, productId, status, active]
+      properties:
+        provider: { type: string, enum: [APPLE, GOOGLE] }
+        productId: { type: string }
+        status: { type: string, enum: [ACTIVE, GRACE, CANCELLED, EXPIRED, REFUNDED] }
+        active: { type: boolean }
+        currentPeriodEnd: { type: [string, 'null'], format: date-time }

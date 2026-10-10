@@ -1,0 +1,847 @@
+{
+  "pricingEngineVersion": "1.0.0",
+  "engineConfig": {
+    "thresholdStep": "0.01",
+    "recommendedStep": "0.05",
+    "returnMode": "SYMMETRIC_ESTIMATE"
+  },
+  "serialization": {
+    "raw": "10 decimales HALF_UP",
+    "api": "2 decimales HALF_UP; metros y segundos enteros HALF_UP"
+  },
+  "fixtures": [
+    {
+      "name": "A_moto_10km_negotiate",
+      "route": {
+        "pickupDistanceMeters": 0,
+        "pickupDurationSeconds": 0,
+        "tripDistanceMeters": 10000,
+        "tripDurationSeconds": 1800
+      },
+      "quote": {
+        "waitingSeconds": 0,
+        "emptyReturnProbability": "0",
+        "tollsAmount": "0",
+        "parkingAmount": "0",
+        "otherDirectCostAmount": "0",
+        "offeredPrice": "4.00"
+      },
+      "vehicleCostProfile": {
+        "fuelEfficiencyKmPerGallon": "110",
+        "fuelPricePerGallon": "2.75",
+        "maintenanceItems": [
+          {
+            "name": "Oil",
+            "cost": "25",
+            "intervalKm": "3000",
+            "enabled": true
+          },
+          {
+            "name": "Chain",
+            "cost": "60",
+            "intervalKm": "25000",
+            "enabled": true
+          }
+        ],
+        "tireSetCost": "180",
+        "tireUsefulLifeKm": "30000",
+        "currentVehicleValue": "3200",
+        "expectedResidualValue": "800",
+        "remainingUsefulLifeKm": "60000",
+        "monthlyFixedCost": "60",
+        "expectedMonthlyKm": "2000",
+        "targetHourlyIncome": "4.5",
+        "platformCommissionRate": "0.10",
+        "paymentPercentageRate": "0",
+        "paymentFixedFee": "0",
+        "targetProfitMargin": "0.10"
+      },
+      "expected": {
+        "effectiveDistanceKmRaw": "10.0000000000",
+        "effectiveHoursRaw": "0.5000000000",
+        "costsRaw": {
+          "fuel": "0.2500000000",
+          "maintenance": "0.1073333333",
+          "tires": "0.0600000000",
+          "depreciation": "0.4000000000",
+          "fixed": "0.3000000000",
+          "tolls": "0.0000000000",
+          "parking": "0.0000000000",
+          "other": "0.0000000000",
+          "operating": "1.1173333333",
+          "targetCompensation": "2.2500000000"
+        },
+        "pricesRaw": {
+          "floor": "1.2414814815",
+          "minimum": "3.7414814815",
+          "recommended": "4.2091666667"
+        },
+        "thresholds": {
+          "floor": "1.25",
+          "minimum": "3.75",
+          "recommended": "4.25"
+        },
+        "decision": "NEGOTIATE",
+        "earningsPerHourRaw": "4.9653333333",
+        "earningsPerKmRaw": "0.2482666667",
+        "api": {
+          "effectiveDistanceMeters": 10000,
+          "effectiveDurationSeconds": 1800,
+          "costs": {
+            "fuel": "0.25",
+            "maintenance": "0.11",
+            "tires": "0.06",
+            "depreciation": "0.40",
+            "fixed": "0.30",
+            "tolls": "0.00",
+            "parking": "0.00",
+            "other": "0.00",
+            "operating": "1.12",
+            "targetCompensation": "2.25"
+          },
+          "earningsPerHour": "4.97",
+          "earningsPerKm": "0.25"
+        }
+      }
+    },
+    {
+      "name": "B_moto_pickup_wait_return_reject",
+      "route": {
+        "pickupDistanceMeters": 2000,
+        "pickupDurationSeconds": 300,
+        "tripDistanceMeters": 12000,
+        "tripDurationSeconds": 1800
+      },
+      "quote": {
+        "waitingSeconds": 300,
+        "emptyReturnProbability": "0.5",
+        "tollsAmount": "0.50",
+        "parkingAmount": "0.20",
+        "otherDirectCostAmount": "0",
+        "offeredPrice": "7.00"
+      },
+      "vehicleCostProfile": {
+        "fuelEfficiencyKmPerGallon": "110",
+        "fuelPricePerGallon": "2.75",
+        "maintenanceItems": [
+          {
+            "name": "Oil",
+            "cost": "25",
+            "intervalKm": "3000",
+            "enabled": true
+          },
+          {
+            "name": "Chain",
+            "cost": "60",
+            "intervalKm": "25000",
+            "enabled": true
+          }
+        ],
+        "tireSetCost": "180",
+        "tireUsefulLifeKm": "30000",
+        "currentVehicleValue": "3200",
+        "expectedResidualValue": "800",
+        "remainingUsefulLifeKm": "60000",
+        "monthlyFixedCost": "60",
+        "expectedMonthlyKm": "2000",
+        "targetHourlyIncome": "4.5",
+        "platformCommissionRate": "0.10",
+        "paymentPercentageRate": "0",
+        "paymentFixedFee": "0",
+        "targetProfitMargin": "0.10"
+      },
+      "expected": {
+        "effectiveDistanceKmRaw": "20.0000000000",
+        "effectiveHoursRaw": "0.9166666667",
+        "costsRaw": {
+          "fuel": "0.5000000000",
+          "maintenance": "0.2146666667",
+          "tires": "0.1200000000",
+          "depreciation": "0.8000000000",
+          "fixed": "0.6000000000",
+          "tolls": "0.5000000000",
+          "parking": "0.2000000000",
+          "other": "0.0000000000",
+          "operating": "2.9346666667",
+          "targetCompensation": "4.1250000000"
+        },
+        "pricesRaw": {
+          "floor": "3.2607407407",
+          "minimum": "7.8440740741",
+          "recommended": "8.8245833333"
+        },
+        "thresholds": {
+          "floor": "3.27",
+          "minimum": "7.85",
+          "recommended": "8.85"
+        },
+        "decision": "REJECT",
+        "earningsPerHourRaw": "3.6712727273",
+        "earningsPerKmRaw": "0.1682666667",
+        "api": {
+          "effectiveDistanceMeters": 20000,
+          "effectiveDurationSeconds": 3300,
+          "costs": {
+            "fuel": "0.50",
+            "maintenance": "0.21",
+            "tires": "0.12",
+            "depreciation": "0.80",
+            "fixed": "0.60",
+            "tolls": "0.50",
+            "parking": "0.20",
+            "other": "0.00",
+            "operating": "2.93",
+            "targetCompensation": "4.13"
+          },
+          "earningsPerHour": "3.67",
+          "earningsPerKm": "0.17"
+        }
+      }
+    },
+    {
+      "name": "C_car_fixed_fee_accept",
+      "route": {
+        "pickupDistanceMeters": 0,
+        "pickupDurationSeconds": 0,
+        "tripDistanceMeters": 15000,
+        "tripDurationSeconds": 2400
+      },
+      "quote": {
+        "waitingSeconds": 0,
+        "emptyReturnProbability": "0",
+        "tollsAmount": "0",
+        "parkingAmount": "0",
+        "otherDirectCostAmount": "0",
+        "offeredPrice": "8.50"
+      },
+      "vehicleCostProfile": {
+        "fuelEfficiencyKmPerGallon": "45",
+        "fuelPricePerGallon": "2.75",
+        "maintenanceItems": [
+          {
+            "name": "Oil",
+            "cost": "40",
+            "intervalKm": "5000",
+            "enabled": true
+          },
+          {
+            "name": "Brakes",
+            "cost": "120",
+            "intervalKm": "30000",
+            "enabled": true
+          }
+        ],
+        "tireSetCost": "400",
+        "tireUsefulLifeKm": "50000",
+        "currentVehicleValue": "9000",
+        "expectedResidualValue": "3000",
+        "remainingUsefulLifeKm": "80000",
+        "monthlyFixedCost": "120",
+        "expectedMonthlyKm": "2500",
+        "targetHourlyIncome": "5.0",
+        "platformCommissionRate": "0.10",
+        "paymentPercentageRate": "0.02",
+        "paymentFixedFee": "0.10",
+        "targetProfitMargin": "0.08"
+      },
+      "expected": {
+        "effectiveDistanceKmRaw": "15.0000000000",
+        "effectiveHoursRaw": "0.6666666667",
+        "costsRaw": {
+          "fuel": "0.9166666667",
+          "maintenance": "0.1800000000",
+          "tires": "0.1200000000",
+          "depreciation": "1.1250000000",
+          "fixed": "0.7200000000",
+          "tolls": "0.0000000000",
+          "parking": "0.0000000000",
+          "other": "0.0000000000",
+          "operating": "3.0616666667",
+          "targetCompensation": "3.3333333333"
+        },
+        "pricesRaw": {
+          "floor": "3.5928030303",
+          "minimum": "7.3806818182",
+          "recommended": "8.1187500000"
+        },
+        "thresholds": {
+          "floor": "3.60",
+          "minimum": "7.39",
+          "recommended": "8.15"
+        },
+        "decision": "ACCEPT",
+        "earningsPerHourRaw": "6.4775000000",
+        "earningsPerKmRaw": "0.2878888889",
+        "api": {
+          "effectiveDistanceMeters": 15000,
+          "effectiveDurationSeconds": 2400,
+          "costs": {
+            "fuel": "0.92",
+            "maintenance": "0.18",
+            "tires": "0.12",
+            "depreciation": "1.13",
+            "fixed": "0.72",
+            "tolls": "0.00",
+            "parking": "0.00",
+            "other": "0.00",
+            "operating": "3.06",
+            "targetCompensation": "3.33"
+          },
+          "earningsPerHour": "6.48",
+          "earningsPerKm": "0.29"
+        }
+      }
+    },
+    {
+      "name": "D_rounding_boundary_reject",
+      "route": {
+        "pickupDistanceMeters": 0,
+        "pickupDurationSeconds": 0,
+        "tripDistanceMeters": 10000,
+        "tripDurationSeconds": 1800
+      },
+      "quote": {
+        "waitingSeconds": 0,
+        "emptyReturnProbability": "0",
+        "tollsAmount": "0",
+        "parkingAmount": "0",
+        "otherDirectCostAmount": "0",
+        "offeredPrice": "3.74"
+      },
+      "vehicleCostProfile": {
+        "fuelEfficiencyKmPerGallon": "110",
+        "fuelPricePerGallon": "2.75",
+        "maintenanceItems": [
+          {
+            "name": "Oil",
+            "cost": "25",
+            "intervalKm": "3000",
+            "enabled": true
+          },
+          {
+            "name": "Chain",
+            "cost": "60",
+            "intervalKm": "25000",
+            "enabled": true
+          }
+        ],
+        "tireSetCost": "180",
+        "tireUsefulLifeKm": "30000",
+        "currentVehicleValue": "3200",
+        "expectedResidualValue": "800",
+        "remainingUsefulLifeKm": "60000",
+        "monthlyFixedCost": "60",
+        "expectedMonthlyKm": "2000",
+        "targetHourlyIncome": "4.5",
+        "platformCommissionRate": "0.10",
+        "paymentPercentageRate": "0",
+        "paymentFixedFee": "0",
+        "targetProfitMargin": "0.10"
+      },
+      "expected": {
+        "effectiveDistanceKmRaw": "10.0000000000",
+        "effectiveHoursRaw": "0.5000000000",
+        "costsRaw": {
+          "fuel": "0.2500000000",
+          "maintenance": "0.1073333333",
+          "tires": "0.0600000000",
+          "depreciation": "0.4000000000",
+          "fixed": "0.3000000000",
+          "tolls": "0.0000000000",
+          "parking": "0.0000000000",
+          "other": "0.0000000000",
+          "operating": "1.1173333333",
+          "targetCompensation": "2.2500000000"
+        },
+        "pricesRaw": {
+          "floor": "1.2414814815",
+          "minimum": "3.7414814815",
+          "recommended": "4.2091666667"
+        },
+        "thresholds": {
+          "floor": "1.25",
+          "minimum": "3.75",
+          "recommended": "4.25"
+        },
+        "decision": "REJECT",
+        "earningsPerHourRaw": "4.4973333333",
+        "earningsPerKmRaw": "0.2248666667",
+        "api": {
+          "effectiveDistanceMeters": 10000,
+          "effectiveDurationSeconds": 1800,
+          "costs": {
+            "fuel": "0.25",
+            "maintenance": "0.11",
+            "tires": "0.06",
+            "depreciation": "0.40",
+            "fixed": "0.30",
+            "tolls": "0.00",
+            "parking": "0.00",
+            "other": "0.00",
+            "operating": "1.12",
+            "targetCompensation": "2.25"
+          },
+          "earningsPerHour": "4.50",
+          "earningsPerKm": "0.22"
+        }
+      }
+    },
+    {
+      "name": "E_no_offer_quote_only",
+      "route": {
+        "pickupDistanceMeters": 1000,
+        "pickupDurationSeconds": 180,
+        "tripDistanceMeters": 8000,
+        "tripDurationSeconds": 1200
+      },
+      "quote": {
+        "waitingSeconds": 600,
+        "emptyReturnProbability": "1",
+        "tollsAmount": "0",
+        "parkingAmount": "0",
+        "otherDirectCostAmount": "0.30",
+        "offeredPrice": null
+      },
+      "vehicleCostProfile": {
+        "fuelEfficiencyKmPerGallon": "110",
+        "fuelPricePerGallon": "2.75",
+        "maintenanceItems": [
+          {
+            "name": "Oil",
+            "cost": "25",
+            "intervalKm": "3000",
+            "enabled": true
+          },
+          {
+            "name": "Chain",
+            "cost": "60",
+            "intervalKm": "25000",
+            "enabled": true
+          }
+        ],
+        "tireSetCost": "180",
+        "tireUsefulLifeKm": "30000",
+        "currentVehicleValue": "3200",
+        "expectedResidualValue": "800",
+        "remainingUsefulLifeKm": "60000",
+        "monthlyFixedCost": "60",
+        "expectedMonthlyKm": "2000",
+        "targetHourlyIncome": "4.5",
+        "platformCommissionRate": "0.10",
+        "paymentPercentageRate": "0",
+        "paymentFixedFee": "0",
+        "targetProfitMargin": "0.10"
+      },
+      "expected": {
+        "effectiveDistanceKmRaw": "17.0000000000",
+        "effectiveHoursRaw": "0.8833333333",
+        "costsRaw": {
+          "fuel": "0.4250000000",
+          "maintenance": "0.1824666667",
+          "tires": "0.1020000000",
+          "depreciation": "0.6800000000",
+          "fixed": "0.5100000000",
+          "tolls": "0.0000000000",
+          "parking": "0.0000000000",
+          "other": "0.3000000000",
+          "operating": "2.1994666667",
+          "targetCompensation": "3.9750000000"
+        },
+        "pricesRaw": {
+          "floor": "2.4438518519",
+          "minimum": "6.8605185185",
+          "recommended": "7.7180833333"
+        },
+        "thresholds": {
+          "floor": "2.45",
+          "minimum": "6.87",
+          "recommended": "7.75"
+        },
+        "decision": null,
+        "earningsPerHourRaw": null,
+        "earningsPerKmRaw": null,
+        "api": {
+          "effectiveDistanceMeters": 17000,
+          "effectiveDurationSeconds": 3180,
+          "costs": {
+            "fuel": "0.43",
+            "maintenance": "0.18",
+            "tires": "0.10",
+            "depreciation": "0.68",
+            "fixed": "0.51",
+            "tolls": "0.00",
+            "parking": "0.00",
+            "other": "0.30",
+            "operating": "2.20",
+            "targetCompensation": "3.98"
+          },
+          "earningsPerHour": null,
+          "earningsPerKm": null
+        }
+      }
+    },
+    {
+      "name": "F_exact_step_no_bump_accept_at_recommended",
+      "route": {
+        "pickupDistanceMeters": 0,
+        "pickupDurationSeconds": 0,
+        "tripDistanceMeters": 17000,
+        "tripDurationSeconds": 1800
+      },
+      "quote": {
+        "waitingSeconds": 0,
+        "emptyReturnProbability": "0",
+        "tollsAmount": "0",
+        "parkingAmount": "0",
+        "otherDirectCostAmount": "0",
+        "offeredPrice": "3.75"
+      },
+      "vehicleCostProfile": {
+        "fuelEfficiencyKmPerGallon": "110",
+        "fuelPricePerGallon": "2.75",
+        "maintenanceItems": [],
+        "tireSetCost": "0",
+        "tireUsefulLifeKm": null,
+        "currentVehicleValue": "0",
+        "expectedResidualValue": "0",
+        "remainingUsefulLifeKm": null,
+        "monthlyFixedCost": "0",
+        "expectedMonthlyKm": null,
+        "targetHourlyIncome": "5.15",
+        "platformCommissionRate": "0",
+        "paymentPercentageRate": "0",
+        "paymentFixedFee": "0",
+        "targetProfitMargin": "0.20"
+      },
+      "expected": {
+        "effectiveDistanceKmRaw": "17.0000000000",
+        "effectiveHoursRaw": "0.5000000000",
+        "costsRaw": {
+          "fuel": "0.4250000000",
+          "maintenance": "0.0000000000",
+          "tires": "0.0000000000",
+          "depreciation": "0.0000000000",
+          "fixed": "0.0000000000",
+          "tolls": "0.0000000000",
+          "parking": "0.0000000000",
+          "other": "0.0000000000",
+          "operating": "0.4250000000",
+          "targetCompensation": "2.5750000000"
+        },
+        "pricesRaw": {
+          "floor": "0.4250000000",
+          "minimum": "3.0000000000",
+          "recommended": "3.7500000000"
+        },
+        "thresholds": {
+          "floor": "0.43",
+          "minimum": "3.00",
+          "recommended": "3.75"
+        },
+        "decision": "ACCEPT",
+        "earningsPerHourRaw": "6.6500000000",
+        "earningsPerKmRaw": "0.1955882353",
+        "api": {
+          "effectiveDistanceMeters": 17000,
+          "effectiveDurationSeconds": 1800,
+          "costs": {
+            "fuel": "0.43",
+            "maintenance": "0.00",
+            "tires": "0.00",
+            "depreciation": "0.00",
+            "fixed": "0.00",
+            "tolls": "0.00",
+            "parking": "0.00",
+            "other": "0.00",
+            "operating": "0.43",
+            "targetCompensation": "2.58"
+          },
+          "earningsPerHour": "6.65",
+          "earningsPerKm": "0.20"
+        }
+      }
+    },
+    {
+      "name": "G_offer_equals_minimum_negotiate",
+      "route": {
+        "pickupDistanceMeters": 0,
+        "pickupDurationSeconds": 0,
+        "tripDistanceMeters": 10000,
+        "tripDurationSeconds": 1800
+      },
+      "quote": {
+        "waitingSeconds": 0,
+        "emptyReturnProbability": "0",
+        "tollsAmount": "0",
+        "parkingAmount": "0",
+        "otherDirectCostAmount": "0",
+        "offeredPrice": "3.75"
+      },
+      "vehicleCostProfile": {
+        "fuelEfficiencyKmPerGallon": "110",
+        "fuelPricePerGallon": "2.75",
+        "maintenanceItems": [
+          {
+            "name": "Oil",
+            "cost": "25",
+            "intervalKm": "3000",
+            "enabled": true
+          },
+          {
+            "name": "Chain",
+            "cost": "60",
+            "intervalKm": "25000",
+            "enabled": true
+          }
+        ],
+        "tireSetCost": "180",
+        "tireUsefulLifeKm": "30000",
+        "currentVehicleValue": "3200",
+        "expectedResidualValue": "800",
+        "remainingUsefulLifeKm": "60000",
+        "monthlyFixedCost": "60",
+        "expectedMonthlyKm": "2000",
+        "targetHourlyIncome": "4.5",
+        "platformCommissionRate": "0.10",
+        "paymentPercentageRate": "0",
+        "paymentFixedFee": "0",
+        "targetProfitMargin": "0.10"
+      },
+      "expected": {
+        "effectiveDistanceKmRaw": "10.0000000000",
+        "effectiveHoursRaw": "0.5000000000",
+        "costsRaw": {
+          "fuel": "0.2500000000",
+          "maintenance": "0.1073333333",
+          "tires": "0.0600000000",
+          "depreciation": "0.4000000000",
+          "fixed": "0.3000000000",
+          "tolls": "0.0000000000",
+          "parking": "0.0000000000",
+          "other": "0.0000000000",
+          "operating": "1.1173333333",
+          "targetCompensation": "2.2500000000"
+        },
+        "pricesRaw": {
+          "floor": "1.2414814815",
+          "minimum": "3.7414814815",
+          "recommended": "4.2091666667"
+        },
+        "thresholds": {
+          "floor": "1.25",
+          "minimum": "3.75",
+          "recommended": "4.25"
+        },
+        "decision": "NEGOTIATE",
+        "earningsPerHourRaw": "4.5153333333",
+        "earningsPerKmRaw": "0.2257666667",
+        "api": {
+          "effectiveDistanceMeters": 10000,
+          "effectiveDurationSeconds": 1800,
+          "costs": {
+            "fuel": "0.25",
+            "maintenance": "0.11",
+            "tires": "0.06",
+            "depreciation": "0.40",
+            "fixed": "0.30",
+            "tolls": "0.00",
+            "parking": "0.00",
+            "other": "0.00",
+            "operating": "1.12",
+            "targetCompensation": "2.25"
+          },
+          "earningsPerHour": "4.52",
+          "earningsPerKm": "0.23"
+        }
+      }
+    },
+    {
+      "name": "H_offer_below_floor_negative_earnings",
+      "route": {
+        "pickupDistanceMeters": 0,
+        "pickupDurationSeconds": 0,
+        "tripDistanceMeters": 10000,
+        "tripDurationSeconds": 1800
+      },
+      "quote": {
+        "waitingSeconds": 0,
+        "emptyReturnProbability": "0",
+        "tollsAmount": "0",
+        "parkingAmount": "0",
+        "otherDirectCostAmount": "0",
+        "offeredPrice": "1.00"
+      },
+      "vehicleCostProfile": {
+        "fuelEfficiencyKmPerGallon": "110",
+        "fuelPricePerGallon": "2.75",
+        "maintenanceItems": [
+          {
+            "name": "Oil",
+            "cost": "25",
+            "intervalKm": "3000",
+            "enabled": true
+          },
+          {
+            "name": "Chain",
+            "cost": "60",
+            "intervalKm": "25000",
+            "enabled": true
+          }
+        ],
+        "tireSetCost": "180",
+        "tireUsefulLifeKm": "30000",
+        "currentVehicleValue": "3200",
+        "expectedResidualValue": "800",
+        "remainingUsefulLifeKm": "60000",
+        "monthlyFixedCost": "60",
+        "expectedMonthlyKm": "2000",
+        "targetHourlyIncome": "4.5",
+        "platformCommissionRate": "0.10",
+        "paymentPercentageRate": "0",
+        "paymentFixedFee": "0",
+        "targetProfitMargin": "0.10"
+      },
+      "expected": {
+        "effectiveDistanceKmRaw": "10.0000000000",
+        "effectiveHoursRaw": "0.5000000000",
+        "costsRaw": {
+          "fuel": "0.2500000000",
+          "maintenance": "0.1073333333",
+          "tires": "0.0600000000",
+          "depreciation": "0.4000000000",
+          "fixed": "0.3000000000",
+          "tolls": "0.0000000000",
+          "parking": "0.0000000000",
+          "other": "0.0000000000",
+          "operating": "1.1173333333",
+          "targetCompensation": "2.2500000000"
+        },
+        "pricesRaw": {
+          "floor": "1.2414814815",
+          "minimum": "3.7414814815",
+          "recommended": "4.2091666667"
+        },
+        "thresholds": {
+          "floor": "1.25",
+          "minimum": "3.75",
+          "recommended": "4.25"
+        },
+        "decision": "REJECT",
+        "earningsPerHourRaw": "-0.4346666667",
+        "earningsPerKmRaw": "-0.0217333333",
+        "api": {
+          "effectiveDistanceMeters": 10000,
+          "effectiveDurationSeconds": 1800,
+          "costs": {
+            "fuel": "0.25",
+            "maintenance": "0.11",
+            "tires": "0.06",
+            "depreciation": "0.40",
+            "fixed": "0.30",
+            "tolls": "0.00",
+            "parking": "0.00",
+            "other": "0.00",
+            "operating": "1.12",
+            "targetCompensation": "2.25"
+          },
+          "earningsPerHour": "-0.43",
+          "earningsPerKm": "-0.02"
+        }
+      }
+    },
+    {
+      "name": "I_car_pickup_return_25_negotiate",
+      "route": {
+        "pickupDistanceMeters": 1503,
+        "pickupDurationSeconds": 245,
+        "tripDistanceMeters": 9001,
+        "tripDurationSeconds": 1501
+      },
+      "quote": {
+        "waitingSeconds": 300,
+        "emptyReturnProbability": "0.25",
+        "tollsAmount": "0",
+        "parkingAmount": "1.00",
+        "otherDirectCostAmount": "0",
+        "offeredPrice": "8.50"
+      },
+      "vehicleCostProfile": {
+        "fuelEfficiencyKmPerGallon": "45",
+        "fuelPricePerGallon": "2.75",
+        "maintenanceItems": [
+          {
+            "name": "Oil",
+            "cost": "40",
+            "intervalKm": "5000",
+            "enabled": true
+          },
+          {
+            "name": "Brakes",
+            "cost": "120",
+            "intervalKm": "30000",
+            "enabled": true
+          }
+        ],
+        "tireSetCost": "400",
+        "tireUsefulLifeKm": "50000",
+        "currentVehicleValue": "9000",
+        "expectedResidualValue": "3000",
+        "remainingUsefulLifeKm": "80000",
+        "monthlyFixedCost": "120",
+        "expectedMonthlyKm": "2500",
+        "targetHourlyIncome": "5.0",
+        "platformCommissionRate": "0.10",
+        "paymentPercentageRate": "0.02",
+        "paymentFixedFee": "0.10",
+        "targetProfitMargin": "0.08"
+      },
+      "expected": {
+        "effectiveDistanceKmRaw": "12.7542500000",
+        "effectiveHoursRaw": "0.6725694444",
+        "costsRaw": {
+          "fuel": "0.7794263889",
+          "maintenance": "0.1530510000",
+          "tires": "0.1020340000",
+          "depreciation": "0.9565687500",
+          "fixed": "0.6122040000",
+          "tolls": "0.0000000000",
+          "parking": "1.0000000000",
+          "other": "0.0000000000",
+          "operating": "3.6032841389",
+          "targetCompensation": "3.3628472222"
+        },
+        "pricesRaw": {
+          "floor": "4.2082774306",
+          "minimum": "8.0296947285",
+          "recommended": "8.8326642014"
+        },
+        "thresholds": {
+          "floor": "4.21",
+          "minimum": "8.03",
+          "recommended": "8.85"
+        },
+        "decision": "NEGOTIATE",
+        "earningsPerHourRaw": "5.6153545070",
+        "earningsPerKmRaw": "0.2961143039",
+        "api": {
+          "effectiveDistanceMeters": 12754,
+          "effectiveDurationSeconds": 2421,
+          "costs": {
+            "fuel": "0.78",
+            "maintenance": "0.15",
+            "tires": "0.10",
+            "depreciation": "0.96",
+            "fixed": "0.61",
+            "tolls": "0.00",
+            "parking": "1.00",
+            "other": "0.00",
+            "operating": "3.60",
+            "targetCompensation": "3.36"
+          },
+          "earningsPerHour": "5.62",
+          "earningsPerKm": "0.30"
+        }
+      }
+    }
+  ]
+}
