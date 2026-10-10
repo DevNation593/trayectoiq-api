@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint, tests y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: trayectoiq
+          POSTGRES_PASSWORD: trayectoiq
+          POSTGRES_DB: trayectoiq
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U trayectoiq -d trayectoiq"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://trayectoiq:trayectoiq@localhost:5432/trayectoiq
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # 1. Instalacion con lockfile estricto ("prepare" genera el cliente de Prisma).
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      # 2. Lint, incluida la regla de dependencias entre modulos.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Formato
+        run: pnpm format:check
+
+      # 3. Typecheck.
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # 4. Tests unitarios.
+      - name: Tests unitarios
+        run: pnpm test:unit
+
+      # 5. Golden e invalidos del motor de precios.
+      - name: Golden del Pricing Engine
+        run: pnpm test:golden
+
+      # 6. Validacion del contrato y comparacion contra la rama base.
+      - name: Validar openapi.yaml
+        run: pnpm openapi:lint
+
+      # Dentro de /v1 solo se admiten cambios aditivos (ADR-007).
+      - name: Detectar cambios incompatibles del contrato
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/oas"
+          if ! git show "origin/$BASE_REF:contract/openapi.yaml" > "$RUNNER_TEMP/oas/base.yaml" 2>/dev/null; then
+            echo "La rama base aun no tiene contrato; no hay nada que comparar."
+            exit 0
+          fi
+          cp contract/openapi.yaml "$RUNNER_TEMP/oas/revision.yaml"
+          docker run --rm -v "$RUNNER_TEMP/oas:/specs:ro" tufin/oasdiff breaking \
+            /specs/base.yaml /specs/revision.yaml --fail-on ERR
+
+      # 7. Tests de integracion contra PostgreSQL real (incluye la deriva del esquema).
+      - name: Tests de integracion
+        run: pnpm test:int
+
+      - name: Tests de contrato
+        run: pnpm test:contract
+
+      - name: Tests de extremo a extremo
+        run: pnpm test:e2e
+
+      # 8. Escaneo de dependencias.
+      - name: Auditoria de dependencias
+        run: pnpm audit:deps
+
+      # 9. Build.
+      - name: Build
+        run: pnpm build
