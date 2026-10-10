@@ -1,0 +1,19 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Cliente de Prisma generado (pnpm db:generate)
+src/generated/
+
+# Entorno: solo se versionan los .example
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# Espacio de trabajo local de ejecucion de planes
+.superpowers/
+
+.DS_Store
+Thumbs.db
