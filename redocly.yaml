@@ -1,0 +1,6 @@
+extends:
+  - recommended
+
+rules:
+  # API privada del producto: no se publica bajo una licencia.
+  info-license: off
