@@ -1,0 +1,9 @@
+{
+  "query": {
+    "limit": "5"
+  },
+  "status": 400,
+  "body": {
+    "message": "q parameter is required when no include categories are specified"
+  }
+}

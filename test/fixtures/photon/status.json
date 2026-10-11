@@ -1,0 +1,4 @@
+{
+  "status": 200,
+  "body": "{\"status\":\"Ok\",\"import_date\":\"2026-10-03T23:01:00Z\",\"version\":\"1.3.0\",\"git_commit\":\"523a59b4\"}"
+}

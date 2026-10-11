@@ -1,0 +1,48 @@
+{
+  "query": {
+    "q": "malecon 2000 guayaquil",
+    "limit": "5",
+    "bbox": "-78.65,-0.45,-78.25,0.08",
+    "lat": "-0.2201",
+    "lon": "-78.5123"
+  },
+  "status": 200,
+  "body": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "W",
+          "osm_id": 711130452,
+          "osm_key": "building",
+          "osm_value": "hotel",
+          "type": "house",
+          "name": "Hotel guayaquil",
+          "street": "Avenida Pedro Vicente Maldonado",
+          "locality": "González Suárez",
+          "district": "Centro Histórico",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170114",
+          "countrycode": "EC",
+          "extent": [
+            -78.5128129,
+            -0.2254731,
+            -78.5124707,
+            -0.2257203
+          ]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.5126553,
+            -0.2256144
+          ]
+        }
+      }
+    ]
+  }
+}

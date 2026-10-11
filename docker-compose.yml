@@ -2,6 +2,9 @@
 #
 #   docker compose up -d postgres mailpit   -> dependencias; la API corre en el host con "pnpm start:dev"
 #   docker compose up --build               -> todo en contenedores: postgres, mailpit, migraciones y API en :3000
+#   docker compose --profile geo up -d      -> ademas, rutas (Valhalla :8002) y direcciones (Photon :2322).
+#                                              La primera vez descarga el extracto de Ecuador y construye indices:
+#                                              varios minutos y ~1.5 GB entre imagenes y datos.
 name: trayectoiq
 
 services:
@@ -64,5 +67,35 @@ services:
       timeout: 3s
       retries: 10
 
+  # Motor de rutas sobre OpenStreetMap (ADR-005). Descarga el extracto de Ecuador y construye las teselas
+  # en el primer arranque; despues reutiliza el volumen. No se publica a internet: solo lo usa la API.
+  valhalla:
+    image: ghcr.io/valhalla/valhalla-scripted:latest
+    profiles: ['geo']
+    environment:
+      tile_urls: https://download.geofabrik.de/south-america/ecuador-latest.osm.pbf
+      build_elevation: 'False'
+      build_admins: 'True'
+      build_time_zones: 'True'
+      serve_tiles: 'True'
+    ports:
+      - '8002:8002'
+    volumes:
+      - valhalla_data:/custom_files
+
+  # Geocoder con autocompletado sobre OpenStreetMap (ADR-005). No hay indice precompilado de Ecuador:
+  # docker/photon/entrypoint.sh lo construye desde el volcado oficial en el primer arranque.
+  photon:
+    image: rtuszik/photon-docker:latest
+    profiles: ['geo']
+    entrypoint: ['sh', '/tiq/entrypoint.sh']
+    ports:
+      - '2322:2322'
+    volumes:
+      - photon_data:/photon/data
+      - ./docker/photon:/tiq:ro
+
 volumes:
   pgdata:
+  valhalla_data:
+  photon_data:

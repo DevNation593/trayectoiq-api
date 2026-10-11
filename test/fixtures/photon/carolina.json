@@ -1,0 +1,160 @@
+{
+  "query": {
+    "q": "parque la carolina",
+    "limit": "5",
+    "bbox": "-78.65,-0.45,-78.25,0.08",
+    "lat": "-0.2201",
+    "lon": "-78.5123"
+  },
+  "status": 200,
+  "body": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "W",
+          "osm_id": 31133611,
+          "osm_key": "leisure",
+          "osm_value": "park",
+          "type": "other",
+          "name": "Parque La Carolina",
+          "street": "Avenida de los Shyris",
+          "district": "La Carolina",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "countrycode": "EC",
+          "extent": [
+            -78.4874976,
+            -0.1765615,
+            -78.4812081,
+            -0.1906796
+          ]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.4847027,
+            -0.183873
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "N",
+          "osm_id": 4749468852,
+          "osm_key": "amenity",
+          "osm_value": "fountain",
+          "type": "house",
+          "name": "Parque la Carolina",
+          "street": "Avenida General Eloy Alfaro",
+          "locality": "La Carolina",
+          "district": "La Carolina",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170518",
+          "countrycode": "EC"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.4831115,
+            -0.1888064
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "N",
+          "osm_id": 4468890485,
+          "osm_key": "highway",
+          "osm_value": "bus_stop",
+          "type": "house",
+          "name": "Parque la Carolina (Juan Pablo Sanz)",
+          "street": "Avenida Río Amazonas",
+          "locality": "La Carolina",
+          "district": "La Carolina",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170135",
+          "countrycode": "EC"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.4862841,
+            -0.1804285
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "W",
+          "osm_id": 665390748,
+          "osm_key": "tourism",
+          "osm_value": "attraction",
+          "type": "house",
+          "name": "Avión del Parque La Carolina",
+          "street": "Japón",
+          "locality": "La Carolina",
+          "district": "La Carolina",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170135",
+          "countrycode": "EC",
+          "extent": [
+            -78.4839479,
+            -0.1797247,
+            -78.4836281,
+            -0.1799762
+          ]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.4838876,
+            -0.1798612
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "N",
+          "osm_id": 11128381211,
+          "osm_key": "leisure",
+          "osm_value": "dog_park",
+          "type": "house",
+          "name": "Parque para perros la Carolina",
+          "street": "Avenida de la República",
+          "locality": "La Carolina",
+          "district": "La Carolina",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170518",
+          "countrycode": "EC"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.4862626,
+            -0.1901166
+          ]
+        }
+      }
+    ]
+  }
+}

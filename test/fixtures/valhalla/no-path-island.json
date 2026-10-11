@@ -1,0 +1,24 @@
+{
+  "request": {
+    "locations": [
+      {
+        "lat": -0.2201,
+        "lon": -78.5123
+      },
+      {
+        "lat": -0.7433,
+        "lon": -90.3154
+      }
+    ],
+    "costing": "auto",
+    "units": "kilometers",
+    "directions_type": "none"
+  },
+  "status": 400,
+  "body": {
+    "error_code": 170,
+    "error": "Locations are in unconnected regions. Go check/edit the map at osm.org",
+    "status_code": 400,
+    "status": "Bad Request"
+  }
+}

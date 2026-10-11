@@ -1,0 +1,14 @@
+{
+  "query": {
+    "q": "zzzzqqqq xxyyzz",
+    "limit": "5",
+    "bbox": "-78.65,-0.45,-78.25,0.08",
+    "lat": "-0.2201",
+    "lon": "-78.5123"
+  },
+  "status": 200,
+  "body": {
+    "type": "FeatureCollection",
+    "features": []
+  }
+}

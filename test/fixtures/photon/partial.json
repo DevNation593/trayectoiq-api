@@ -1,0 +1,159 @@
+{
+  "query": {
+    "q": "quicen",
+    "limit": "5",
+    "bbox": "-78.65,-0.45,-78.25,0.08",
+    "lat": "-0.2201",
+    "lon": "-78.5123"
+  },
+  "status": 200,
+  "body": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "W",
+          "osm_id": 471645998,
+          "osm_key": "building",
+          "osm_value": "retail",
+          "type": "house",
+          "name": "Quicentro Sur",
+          "street": "Avenida Morán Valverde",
+          "locality": "Turubamba",
+          "district": "Unión Popular",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "181910",
+          "countrycode": "EC",
+          "extent": [
+            -78.5445956,
+            -0.2847362,
+            -78.5417723,
+            -0.2872408
+          ]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.5431996,
+            -0.2859762
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "N",
+          "osm_id": 849124502,
+          "osm_key": "amenity",
+          "osm_value": "parking",
+          "type": "house",
+          "name": "Quicentro Sur",
+          "street": "Avenida Morán Valverde",
+          "district": "Quitumbe",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170146",
+          "countrycode": "EC"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.5427909,
+            -0.2860565
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "N",
+          "osm_id": 5627535521,
+          "osm_key": "amenity",
+          "osm_value": "police",
+          "type": "house",
+          "name": "Quicentro Sur",
+          "street": "Avenida Morán Valverde",
+          "district": "Quitumbe",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "181910",
+          "countrycode": "EC"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.543186,
+            -0.2845832
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "N",
+          "osm_id": 2204894854,
+          "osm_key": "amenity",
+          "osm_value": "parking",
+          "type": "house",
+          "name": "Quicentro Sur",
+          "street": "Avenida Morán Valverde",
+          "district": "Quitumbe",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "181910",
+          "countrycode": "EC"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.5426034,
+            -0.2856353
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "W",
+          "osm_id": 454902297,
+          "osm_key": "building",
+          "osm_value": "yes",
+          "type": "house",
+          "name": "Quicentro",
+          "street": "El Comercio",
+          "locality": "Batan Bajo",
+          "district": "Iñaquito",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170505",
+          "countrycode": "EC",
+          "extent": [
+            -78.480034,
+            -0.1752962,
+            -78.4789396,
+            -0.1758005
+          ]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.4795606,
+            -0.1755598
+          ]
+        }
+      }
+    ]
+  }
+}

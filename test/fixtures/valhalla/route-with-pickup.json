@@ -1,0 +1,100 @@
+{
+  "request": {
+    "locations": [
+      {
+        "lat": -0.2003,
+        "lon": -78.4313
+      },
+      {
+        "lat": -0.2201,
+        "lon": -78.5123
+      },
+      {
+        "lat": -0.1807,
+        "lon": -78.4841
+      }
+    ],
+    "costing": "motorcycle",
+    "units": "kilometers",
+    "directions_type": "none"
+  },
+  "status": 200,
+  "body": {
+    "trip": {
+      "locations": [
+        {
+          "type": "break",
+          "lat": -0.2003,
+          "lon": -78.4313,
+          "side_of_street": "left",
+          "original_index": 0
+        },
+        {
+          "type": "break",
+          "lat": -0.2201,
+          "lon": -78.5123,
+          "side_of_street": "left",
+          "original_index": 1
+        },
+        {
+          "type": "break",
+          "lat": -0.1807,
+          "lon": -78.4841,
+          "side_of_street": "right",
+          "original_index": 2
+        }
+      ],
+      "legs": [
+        {
+          "summary": {
+            "has_time_restrictions": false,
+            "has_toll": false,
+            "has_highway": false,
+            "has_ferry": false,
+            "min_lat": -0.220504,
+            "min_lon": -78.512538,
+            "max_lat": -0.196226,
+            "max_lon": -78.431192,
+            "time": 2007.915,
+            "length": 12.27,
+            "cost": 2720.196
+          },
+          "shape": "d_fKn|`rtC}HtH_InGiFpO_@fA{EvPzHpD|@p@rApAdBdCRh@Lf@?b@If@kU`q@a@jAoClHaa@bfAeBpE_Wll@gErKeDnIaBhEcGvYaI`k@_D`@iBdAwAvAeAfBg@tBS`BC`BJbBZ|Aj@xAv@pAkBbEL~CuB~[uGhYsRhp@aOpg@wQdm@sHjWqHbXU|BhAbHlA`FOnCIvAEbDYv\\Sjh@wB|kAg@r\\q@`NmB`Ze@bc@^bUzD|c@tH`t@p@|F^lDb@bEnClN`Mpj@jHnUlUpf@fEbIrMrq@TrCM~DwBpKW`CT|`@[hDoGld@cCpMgAbC}GvKsBtDy@bDk@hFDvFj@`FbBlDlN|Rr@nB`@bCpApZ^~D~@fDpAfCrB`E|@bDf@lD~@d^Wb_@@pF?~G@rEChB?pACnC?xVq@tLoAdLoBzNwDp[HxEb@dEzFtR~BzJn@rGIdGs@rDoBzEkVx}@oAvEU|CGdDd@fDbTbi@nCzJ~@nJDjD]`Fo@fGQlDNpE`SvuAlAj`@@lONzCp@pDhA`DzK|Rh@|@bCpDzBvCe@X[b@Mj@Al@Jj@Vd@yOfEoDxAkEfD{CrDyB~E{AzFoA|HNtp@b@rB~@pAnT|T~FfItGrLRfAApAW|@g@X[Lg@DyM|@mCXiElGmApDg@vCdChMvDpG`X`[tBhDt@zCl@~GYjIuEbQG`F\\xDpR~d@fHfQ`@hBMz@y@h@mAFsAw@sCgDcB{DgAwBkC_A}BPoAfBZxCfCvDzIfKpAnBTlCM|E_BtCeDzCwBf@_]~BaGhAgFtBaC`C_CzEmAhJQdHf@lG|AhB|Cb@dCcB~C}JnCgDnEYtGrBlE~CfDfEj@rBEhC_BtD{ClFwEbJyFrRgAjFiA~GGd@?t@Rx@Xp@X`@^Xr@P~ABbLExAEpATlDtApAd@vAHpAK|AkA`EqErBuAdBe@tBSxBItCLjJdCnXtGnOnDjPxDpK`DxLnFbBxA~AvAvF`HvAhA`CnAhB\\jIpB~Bz@fBnArAnAn@tBNtFnB`PEvK~BnPv@~FWhFkCfHaClGC^QjGFhH?lCMt@w@|A_D~EiAjBY|AAbBTzAb@fAbAhArAv@~A\\l\\Fzt@VnOi@dL_ArFkAlDu@fE[xEPxEf@bLhCxBl@ho@hQnDdArCrA~BfC|@zApCtEdMxRrDnCzCpA~B^|BFlCb@lDlAtD`CdHpEhCrAfCTlD@pGa@nD@vDfAfClBpGjIdClCtD`ChFlBvM|CpFtBdFbCnFfDzDvBtBr@jBTlC?rJWfIL`F|@xHbDfH|CrJfCdYrDhE|@~Cr@rHfCpDz@nDVzEGhJk@lEK|EFjFb@lDr@tElB~Az@tAp@jFjDrD|BzCjAzRzF|D~A~TvMdE~AbEx@fF^`E?tGc@rWoB~ESlE^nEzAlDjDdBdEh@xEXzPKvE[pD{ErSOlEJjE|@vHjChKzBhIr@zF?~D{Bv|@o@~IeCzHMr@U`@uKtRkBrDkK~OsEjHeChAkBj@z@dGr@jFhEbXh@hD|H|g@f@pC\\tBtBnMEvEi@lm@O~Dm@tOiAzYWjDa@xBoCnGyCz@eC~AiB|BcAjC_@vCBxCp@lD~AxCbCvB`DnApD^{@dG]jGw@hVkArUa@~TAxAEzAWzJItBi@xPmAdSaAlGoAjGk@dCw@dCwAdEeBbEaDnEkAxAeIjKkUlY_IvJiB|Bak@pe@}B|@cBV{@JyBPcDHcCB_BAs@Yc@[WQa@c@u`@_r@_BuBq@q@u@g@uL}UkBsDiFaLqHwMuEyEWSYMWKa@C]?YBWFOFEBKDNVhWpe@fBbD|A|C~DdEvBpCjSh_@xOrYr[pn@|Vfe@bTbb@`EjHfKvQtDxGpBpDjQr[xApCvE`Jp@pAhAbArAlArAlA|BlBx@n@j{@zq@lGxHjHbHnBjDhHjMfJlQrAtCzApC|AzDpC~Hz@xB`IpU~IlV~BrNnAnI`Xr`A|DxLnTlq@d@lArN~]lAtDrNra@JXrEdMlE|Lf@rB@BCrGGzDr@lDVdA\\x@nF~Hr@bAN\\N^H^@ZEr@nEvCvFnFtIjIfQjSxKdK~AbBz@fCVzA`E`UzG|_@nB~KJn@HV`ExMV~@Tp@hLp^pHtU`@jA`@z@HP|N~YhH`OZn@R`@@FhWli@r@vAp@j@r]hXt@p@bA|@bAv@`g@r_@Yf@oZ`i@Ub@Yb@oMzTiAlBsJlPkApBj@b@dOjLpDpC"
+        },
+        {
+          "summary": {
+            "has_time_restrictions": false,
+            "has_toll": false,
+            "has_highway": false,
+            "has_ferry": false,
+            "min_lat": -0.222546,
+            "min_lon": -78.514326,
+            "max_lat": -0.178594,
+            "max_lon": -78.484608,
+            "time": 1273.098,
+            "length": 7.121,
+            "cost": 2511.741
+          },
+          "shape": "`olLtx_wtC`LtIt@l@n@f@p`Azv@tk@dh@FF`@^j@w@ja@uk@n@_AqB{AcJeHqZqU_@Ys@k@gfAmz@YUse@__@_@Yc@[cXuS_K}Hy@o@e@]Xg@f@y@|Vme@^u@`@u@X_ATu@pGgM~MiVpAyBbAgBdTu_@h@aAbHuI`@g@a@[eZsUk@c@y@o@w_@uYOM_@[]Wa@Y{a@_\\IGi@a@o@e@QKyg@o^m@c@e@[gKsHc@[s@m@mKaJ{I_HsE_IUaBiAmHo@}Do@gEgD}I}K}HoJoIcWyUuFmGkDcEuDyDwFwDcRwJgFuCqg@cZ_VeOkEmC{DmCoD}B[SgFsDaLmIyEoDgH_FoZ{S{T{NoDqDaEmE{D}Ee@q@_JcLqAaBIMcGwHiEqF_@g@eNcPq@o@}ArA{N|LyC~BsAXkATkBEmB_@{Ag@gNiJqOiFsKmCeM}CaZkHSCaKoC_FsAu@SKCKCcj@yOyC_AyF_Bew@yTiQgFkIaC_EkAuRcFkMeDuEiA}KkB{Fy@sQ_Bc@EuD]oF{@_JgBa_@eIqC}@iCw@kLmDeH_CuKqDaA]eb@mNMEcImCq@Ug]_LGCy[iK}\\mL]Ks@U]M_{@eZmCaA{Ai@w[kL{Ak@e@Qml@oRcHwBiA]{@W_A[}`@wMuIuCuC_A[KeEsAcT{GuJ{CqDoAoAc@o@Mw@Qu@OgA_@mGyBeA[w_@_L}IiCaMoEkIaBuZ{JqOcFmAc@sh@mRu@RoJaEmIaCcfA}ZwBs@cKsEiHqDuX_HmYoJgGqBgS{GcUsHqC}@gA_@c@MgA_@uRiGgXuIsA_@me@yMs_A{Wy]{J{IcCmCs@AA_A[i@QeNqEyScHop@gS{Be@EAae@sJi{@kQs]sGmE{@gYkFiW{EeZoFsBgC}IcVKu@Cs@CoAPaBPkAh@iBr@sAfF}GbH{BjEsAPk@Do@e@wAYS_@Ku@Fec@jNyAd@e@gAcZ{t@kMiX}Ni\\mc@iaAo@wALiBFgAFeAsGg@w@K}PgB}CWwf@}Eqo@qGcBQm~@gJXyBzIit@xDgZrA[jEeA|Bx@}AhHA\\L`@TVpEnAhI|BvFzA`@CTMV_@~AgFAa@MY??"
+        }
+      ],
+      "summary": {
+        "has_time_restrictions": false,
+        "has_toll": false,
+        "has_highway": false,
+        "has_ferry": false,
+        "min_lat": -0.222546,
+        "min_lon": -78.514326,
+        "max_lat": -0.178594,
+        "max_lon": -78.431192,
+        "time": 3281.014,
+        "length": 19.391,
+        "cost": 5231.938
+      },
+      "status_message": "Found route between points",
+      "status": 0,
+      "units": "kilometers",
+      "language": "en-US"
+    }
+  }
+}

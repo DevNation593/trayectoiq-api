@@ -1,0 +1,174 @@
+{
+  "query": {
+    "q": "avenida amazonas",
+    "limit": "5",
+    "bbox": "-78.65,-0.45,-78.25,0.08",
+    "lat": "-0.2201",
+    "lon": "-78.5123"
+  },
+  "status": 200,
+  "body": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "W",
+          "osm_id": 435670399,
+          "osm_key": "highway",
+          "osm_value": "residential",
+          "type": "street",
+          "name": "Avenida Amazonas",
+          "locality": "Pinar",
+          "district": "La Florida",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170512",
+          "countrycode": "EC",
+          "extent": [
+            -78.4916363,
+            -0.1455384,
+            -78.491607,
+            -0.1455913
+          ]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.4916216,
+            -0.1455649
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "W",
+          "osm_id": 31246968,
+          "osm_key": "highway",
+          "osm_value": "secondary",
+          "type": "street",
+          "name": "Avenida Amazonas",
+          "locality": "Pinar",
+          "district": "La Florida",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170512",
+          "countrycode": "EC",
+          "extent": [
+            -78.4914723,
+            -0.1461077,
+            -78.4914481,
+            -0.1461169
+          ]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.4914602,
+            -0.1461123
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "W",
+          "osm_id": 952358267,
+          "osm_key": "highway",
+          "osm_value": "path",
+          "type": "street",
+          "name": "Avenida Amazonas",
+          "locality": "Zaldumbide",
+          "district": "El Carmen",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170102",
+          "countrycode": "EC",
+          "extent": [
+            -78.4837951,
+            -0.158425,
+            -78.4836128,
+            -0.158762
+          ]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.483704,
+            -0.1585935
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "W",
+          "osm_id": 51156485,
+          "osm_key": "highway",
+          "osm_value": "service",
+          "type": "street",
+          "name": "Avenida Amazonas",
+          "district": "El Carmen",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170512",
+          "countrycode": "EC",
+          "extent": [
+            -78.4916113,
+            -0.1450678,
+            -78.4912751,
+            -0.145241
+          ]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.4914521,
+            -0.1451721
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "osm_type": "W",
+          "osm_id": 896525205,
+          "osm_key": "highway",
+          "osm_value": "tertiary",
+          "type": "street",
+          "name": "Avenida Río Amazonas",
+          "locality": "La Colón",
+          "district": "Mariscal Sucre",
+          "city": "Quito",
+          "county": "Quito",
+          "state": "Pichincha",
+          "country": "Ecuador",
+          "postcode": "170522",
+          "countrycode": "EC",
+          "extent": [
+            -78.4900226,
+            -0.1977042,
+            -78.4899627,
+            -0.1977948
+          ]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -78.4899926,
+            -0.1977495
+          ]
+        }
+      }
+    ]
+  }
+}

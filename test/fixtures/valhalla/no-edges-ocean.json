@@ -1,0 +1,24 @@
+{
+  "request": {
+    "locations": [
+      {
+        "lat": -0.2201,
+        "lon": -78.5123
+      },
+      {
+        "lat": -1.5,
+        "lon": -84
+      }
+    ],
+    "costing": "auto",
+    "units": "kilometers",
+    "directions_type": "none"
+  },
+  "status": 400,
+  "body": {
+    "error_code": 171,
+    "error": "No suitable edges near location",
+    "status_code": 400,
+    "status": "Bad Request"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "body": {
+    "version": "3.9.1-34639a335",
+    "tileset_last_modified": 1791677769,
+    "available_actions": [
+      "route",
+      "locate",
+      "sources_to_targets",
+      "optimized_route",
+      "isochrone",
+      "trace_route",
+      "trace_attributes",
+      "height",
+      "transit_available",
+      "expansion",
+      "centroid",
+      "status",
+      "tile"
+    ]
+  }
+}
