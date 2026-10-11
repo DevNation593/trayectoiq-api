@@ -32,7 +32,9 @@
     "audit:deps": "pnpm audit --prod --audit-level=high",
     "ci:local": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test:unit && pnpm test:golden && pnpm fixtures:check && pnpm openapi:lint && pnpm test:int && pnpm test:contract && pnpm test:e2e && pnpm audit:deps && pnpm build",
     "pricing:calc": "tsx scripts/pricing-calc.ts",
-    "fixtures:check": "node scripts/check-fixtures.mjs"
+    "fixtures:check": "node scripts/check-fixtures.mjs",
+    "test:live": "vitest run test/live/",
+    "benchmark:routing": "tsx scripts/benchmark-routing.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.1.2",

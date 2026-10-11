@@ -25,7 +25,11 @@ const CATALOG: { label: string; secondaryLabel: string; lat: number; lng: number
 
 /** Minusculas y sin tildes, para comparar como escribe la gente. */
 const normalize = (text: string): string =>
-  text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim();
 
 /** Geocoder determinista con un catalogo fijo de lugares de Quito, para tests y desarrollo. */
 export class FakeGeocodingProvider implements GeocodingProvider {
