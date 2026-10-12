@@ -1,0 +1,10 @@
+# Cambios del contrato que oasdiff marca como incompatibles y que se aceptaron a sabiendas.
+# Cada linea es un cambio concreto (metodo, ruta y descripcion); no desactiva la regla para lo demas.
+#
+# M5: events[].name deja de ser un enum. Con el enum, un nombre desconocido rechazaba el lote entero,
+# en contra de 08_ANALYTICS_VALIDATION.md ("se descartan en la ingesta"). Quitarlo amplia lo que la
+# API acepta; ninguna app publicada dependia de el.
+POST /events removed the enum value `app_opened` of the request property `events/items/name`
+POST /events removed the enum value `onboarding_started` of the request property `events/items/name`
+POST /events removed the enum value `paywall_viewed` of the request property `events/items/name`
+POST /events removed the enum value `subscription_started` of the request property `events/items/name`

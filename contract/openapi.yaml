@@ -848,7 +848,10 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/EventBatch' }
       responses:
-        '202': { description: Accepted. Los eventos con nombre o propiedades no permitidas se descartan. }
+        '202':
+          description: |
+            Accepted. Un evento con un nombre fuera de la lista permitida se descarta entero; de los demás
+            se descartan las propiedades no permitidas. El resto del lote se guarda.
         '422': { $ref: '#/components/responses/ValidationError' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
@@ -1365,6 +1368,15 @@ components:
           properties:
             id: { type: string, format: uuid }
             createdAt: { type: string, format: date-time }
+            vehicleId: { type: string, format: uuid }
+            pickupLabel:
+              type: [string, 'null']
+              description: Nombre del punto de recogida. null si se eligió sin nombre o si ya venció la retención de ubicaciones.
+            destinationLabel:
+              type: [string, 'null']
+              description: Nombre del destino. null si se eligió sin nombre o si ya venció la retención de ubicaciones.
+            waitingSeconds: { type: integer, minimum: 0, maximum: 10800 }
+            emptyReturnProbability: { $ref: '#/components/schemas/DecimalString' }
             decision:
               oneOf:
                 - $ref: '#/components/schemas/QuoteDecision'
@@ -1402,7 +1414,11 @@ components:
       properties:
         name:
           type: string
-          enum: [app_opened, onboarding_started, paywall_viewed, subscription_started]
+          description: |
+            Lista permitida: app_opened, onboarding_started, paywall_viewed, subscription_started.
+            No es un enum del esquema a propósito: una app más nueva puede enviar un nombre que esta versión
+            de la API no conoce, y ese evento se descarta sin rechazar el lote.
+          examples: [app_opened]
         version: { type: integer, minimum: 1, default: 1 }
         occurredAt: { type: string, format: date-time }
         properties:

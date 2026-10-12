@@ -35,7 +35,8 @@
     "pricing:calc": "tsx scripts/pricing-calc.ts",
     "fixtures:check": "node scripts/check-fixtures.mjs",
     "test:live": "vitest run test/live/",
-    "benchmark:routing": "tsx scripts/benchmark-routing.ts"
+    "benchmark:routing": "tsx scripts/benchmark-routing.ts",
+    "metrics": "tsx scripts/metrics.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.1.2",

@@ -1,11 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
+import { APP_ENV } from '../../config/config.module.js';
+import type { Env } from '../../config/env.js';
 import { AppConfigService } from '../../shared/app-config/app-config.service.js';
 import type { AuthContext } from '../../shared/auth/auth-context.js';
 import { CLOCK, type Clock } from '../../shared/clock/clock.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import { decodePlaceId, InvalidPlaceIdError } from '../../shared/geo/place-id.js';
 import { SignedTokens, TokenError } from '../../shared/signed-tokens/signed-tokens.js';
+import { AnalyticsService } from '../analytics/analytics.service.js';
 import { PricingError } from '../pricing/domain/errors.js';
 import { calculate } from '../pricing/domain/pricing-engine.js';
 import {
@@ -31,13 +34,11 @@ import {
   type RouteTokenPayload,
   toPricingProfile,
 } from './quote.dto.js';
+import { waitingMinutesBucket } from './quote-analytics.js';
+import { DISCLAIMER, priceText } from './saved-quote.dto.js';
 
 /** Vigencia de routeToken y previewToken desde que se calcula la ruta (02_PRD_MVP.md RF-09). */
 const TOKEN_TTL_MS = 15 * 60 * 1000;
-
-const DISCLAIMER =
-  'Los valores son estimaciones a partir de los costos que configuraste y de una ruta calculada. ' +
-  'No son una tarifa oficial ni garantizan una ganancia.';
 
 const ROUTING_PROFILES: Record<'MOTORCYCLE' | 'CAR', RoutingProfile> = {
   MOTORCYCLE: 'MOTORCYCLE',
@@ -62,6 +63,13 @@ function routingAppError(error: RoutingError): AppError {
   }
 }
 
+/** Lo que se sabe de un preview en curso, para el evento que deja al terminar o al fallar. */
+interface PreviewTrace {
+  stage: 'validation' | 'quota' | 'routing' | 'pricing';
+  routingProvider: string | null;
+  routeReused: boolean;
+}
+
 interface ResolvedRoute {
   payload: RouteTokenPayload;
   token: string;
@@ -76,15 +84,60 @@ export class QuotesService {
     @Inject(ROUTING_PROVIDER) private readonly routing: RoutingProvider,
     @Inject(SignedTokens) private readonly tokens: SignedTokens,
     @Inject(AppConfigService) private readonly config: AppConfigService,
+    @Inject(AnalyticsService) private readonly analytics: AnalyticsService,
+    @Inject(APP_ENV) private readonly env: Env,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
   /**
-   * Calcula una cotizacion sin guardarla (04_ARCHITECTURE.md seccion 3). Con un routeToken vigente
-   * no se rutea ni se consume cuota; con puntos nuevos se toma una unidad de cuota, que se devuelve
-   * si al final no se pudo calcular.
+   * Calcula una cotizacion sin guardarla (04_ARCHITECTURE.md seccion 3) y deja el evento de exito
+   * o de falla con la etapa en que ocurrio.
    */
   async preview(auth: AuthContext, request: PreviewRequest): Promise<PreviewResponse> {
+    const startedAt = this.clock.now();
+    const trace: PreviewTrace = { stage: 'validation', routingProvider: null, routeReused: false };
+    const latency = (): number => this.clock.now().getTime() - startedAt.getTime();
+    try {
+      const response = await this.compute(auth, request, trace);
+      await this.analytics.record({
+        name: 'quote_preview_succeeded',
+        userId: auth.userId,
+        properties: {
+          quote_request_id: response.quoteRequestId,
+          route_reused: trace.routeReused,
+          routing_provider: response.route.routingProvider,
+          routing_profile: response.route.routingProfile,
+          latency_ms: latency(),
+          recommendation: response.recommendation,
+          has_offer: response.offeredPrice !== null,
+          pricing_engine_version: response.pricingEngineVersion,
+        },
+      });
+      return response;
+    } catch (error) {
+      await this.analytics.record({
+        name: 'quote_preview_failed',
+        userId: auth.userId,
+        properties: {
+          error_code: error instanceof AppError ? error.code : 'INTERNAL_ERROR',
+          stage: trace.stage,
+          routing_provider: trace.routingProvider,
+          latency_ms: latency(),
+        },
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Con un routeToken vigente no se rutea ni se consume cuota; con puntos nuevos se toma una unidad
+   * de cuota, que se devuelve si al final no se pudo calcular.
+   */
+  private async compute(
+    auth: AuthContext,
+    request: PreviewRequest,
+    trace: PreviewTrace,
+  ): Promise<PreviewResponse> {
     if (!auth.emailVerified) {
       throw new AppError(403, 'EMAIL_NOT_VERIFIED', 'Verifica tu correo para poder cotizar');
     }
@@ -106,6 +159,7 @@ export class QuotesService {
     };
     const vehicleCostProfile = toPricingProfile(vehicle);
     const price = (route: RouteTokenPayload['route']) => {
+      trace.stage = 'pricing';
       try {
         return calculate({ route, quote, vehicleCostProfile }, engineConfig);
       } catch (error) {
@@ -116,17 +170,37 @@ export class QuotesService {
       }
     };
 
+    const reused =
+      request.routeToken === undefined
+        ? null
+        : await this.reuseRoute(auth.userId, request.routeToken, profile);
+    const points = reused ? null : this.readPoints(request);
+    trace.routeReused = reused !== null;
+    trace.routingProvider = reused ? reused.payload.routingProvider : this.env.routingProvider;
+    await this.analytics.record({
+      name: 'quote_preview_requested',
+      userId: auth.userId,
+      properties: {
+        vehicle_type: vehicle.type,
+        pickup_mode: reused ? reused.payload.pickupMode : (points?.pickupMode ?? null),
+        has_offer: quote.offeredPrice !== null,
+        return_probability_bucket: quote.emptyReturnProbability,
+        waiting_minutes_bucket: waitingMinutesBucket(quote.waitingSeconds),
+        plan: await this.usage.planOf(auth.userId),
+      },
+    });
+
     let resolved: ResolvedRoute;
     let result: ReturnType<typeof calculate>;
     let remaining: number;
     let plan: PreviewResponse['quota']['plan'];
 
-    if (request.routeToken !== undefined) {
-      resolved = await this.reuseRoute(auth.userId, request.routeToken, profile);
+    if (reused) {
+      resolved = reused;
       result = price(resolved.payload.route);
       ({ plan, remaining } = await this.usage.quota(auth.userId));
-    } else {
-      const points = this.readPoints(request);
+    } else if (points) {
+      trace.stage = 'quota';
       const consumption = await this.usage.consumeRouteQuota(auth.userId);
       if (!consumption.allowed) {
         throw new AppError(
@@ -138,6 +212,7 @@ export class QuotesService {
         );
       }
       try {
+        trace.stage = 'routing';
         resolved = await this.computeRoute(auth.userId, profile, points);
         result = price(resolved.payload.route);
       } catch (error) {
@@ -146,6 +221,8 @@ export class QuotesService {
         throw error;
       }
       ({ plan, remaining } = consumption);
+    } else {
+      throw new Error('Un preview sin routeToken siempre tiene puntos');
     }
 
     const quoteRequestId = randomUUID();
@@ -181,7 +258,7 @@ export class QuotesService {
       },
       costs: result.api.costs,
       pricing: result.thresholds,
-      offeredPrice: quote.offeredPrice,
+      offeredPrice: quote.offeredPrice === null ? null : priceText(quote.offeredPrice),
       earningsPerHour: result.api.earningsPerHour,
       earningsPerKm: result.api.earningsPerKm,
       recommendation: result.decision,

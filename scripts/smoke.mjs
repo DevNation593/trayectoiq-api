@@ -1,5 +1,6 @@
 // Prueba de humo contra una API levantada con proveedores reales (Valhalla, Photon, Mailpit):
-// registra una cuenta, verifica el correo, crea un vehiculo, busca dos lugares, cotiza y recalcula.
+// registra una cuenta, verifica el correo, crea un vehiculo, busca dos lugares, cotiza, recalcula,
+// guarda la cotizacion, la lee del historial, registra la decision real y envia un evento de la app.
 //
 //   docker compose --profile geo up -d
 //   pnpm build && pnpm start        (con ROUTING_PROVIDER=valhalla en .env)
@@ -136,5 +137,51 @@ if (
   process.exit(1);
 }
 console.log(`    oferta ${pricing.recommended} -> ACCEPT, cuota sin cambios`);
+
+const saved = await call('POST', '/quotes', {
+  token,
+  headers: { 'idempotency-key': randomUUID() },
+  body: { previewToken: preview.data.previewToken },
+});
+expectStatus('cotizacion guardada', saved, 201);
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+if (!same(saved.data.pricing, pricing) || !same(saved.data.costs, preview.data.costs)) {
+  console.error(`FALLA: lo guardado difiere del preview ${JSON.stringify(saved.data)}`);
+  process.exit(1);
+}
+
+const history = await call('GET', '/quotes?limit=5', { token });
+expectStatus('historial', history, 200);
+const detail = await call('GET', `/quotes/${saved.data.id}`, { token });
+expectStatus('detalle de la cotizacion', detail, 200);
+if (history.data.items[0]?.id !== saved.data.id || !same(detail.data, saved.data)) {
+  console.error(`FALLA: el historial no devuelve lo guardado ${JSON.stringify(history.data)}`);
+  process.exit(1);
+}
+console.log(
+  `    ${detail.data.pickupLabel} -> ${detail.data.destinationLabel}, igual que el preview`,
+);
+
+const decision = await call('POST', `/quotes/${saved.data.id}/decision`, {
+  token,
+  headers: { 'idempotency-key': randomUUID() },
+  body: { action: 'NEGOTIATED_AND_ACCEPTED', finalPrice: pricing.minimum, influence: 'YES' },
+});
+expectStatus('decision real registrada', decision, 200);
+
+const events = await call('POST', '/events', {
+  token,
+  body: {
+    anonymousId: `humo-${randomUUID()}`,
+    events: [
+      {
+        name: 'app_opened',
+        occurredAt: new Date().toISOString(),
+        properties: { app_platform: 'ANDROID', app_version: '0.0.0-humo' },
+      },
+    ],
+  },
+});
+expectStatus('evento de la app aceptado', events, 202);
 
 console.log('\nPrueba de humo completa.');

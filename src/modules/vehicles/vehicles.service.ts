@@ -3,6 +3,8 @@ import type { Prisma } from '../../generated/prisma/client.js';
 import { CLOCK, type Clock } from '../../shared/clock/clock.js';
 import { DatabaseService } from '../../shared/database/database.service.js';
 import { AppError } from '../../shared/errors/app-error.js';
+import { Fraction } from '../../shared/fraction/fraction.js';
+import { AnalyticsService } from '../analytics/analytics.service.js';
 import { type Plan, UsageService } from '../usage/usage.service.js';
 import {
   toVehicleDto,
@@ -28,6 +30,7 @@ export class VehiclesService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(UsageService) private readonly usage: UsageService,
+    @Inject(AnalyticsService) private readonly analytics: AnalyticsService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -97,6 +100,15 @@ export class VehiclesService {
         },
         include: WITH_PROFILE,
       });
+    });
+    await this.analytics.record({
+      name: 'vehicle_setup_completed',
+      userId,
+      properties: {
+        vehicle_type: input.type,
+        has_maintenance_items: input.costProfile.maintenanceItems.length > 0,
+        has_fixed_costs: Fraction.parse(input.costProfile.monthlyFixedCost).sign() > 0,
+      },
     });
     return toVehicleDto(vehicle);
   }

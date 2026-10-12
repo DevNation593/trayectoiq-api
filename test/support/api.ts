@@ -116,3 +116,18 @@ export async function registerUser(
     refreshToken: registered.body.refreshToken,
   };
 }
+
+/** La misma sesion con un access token recien emitido: para tests que dejan pasar minutos. */
+export async function renewSession(test: TestApp, session: Session): Promise<Session> {
+  const renewed = await call<{ accessToken: string; refreshToken: string }>(
+    test,
+    'refreshSession',
+    { body: { refreshToken: session.refreshToken } },
+  );
+  expect(renewed.status, JSON.stringify(renewed.body)).toBe(200);
+  return {
+    ...session,
+    accessToken: renewed.body.accessToken,
+    refreshToken: renewed.body.refreshToken,
+  };
+}

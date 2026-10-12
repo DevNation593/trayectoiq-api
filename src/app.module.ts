@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from './config/config.module.js';
 import { HealthModule } from './health/health.module.js';
+import { AnalyticsModule } from './modules/analytics/analytics.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { DecisionsModule } from './modules/decisions/decisions.module.js';
 import { JobsModule } from './modules/jobs/jobs.module.js';
 import { PlacesModule } from './modules/places/places.module.js';
 import { QuotesModule } from './modules/quotes/quotes.module.js';
@@ -17,6 +19,7 @@ import { DatabaseModule } from './shared/database/database.module.js';
     CoreModule,
     DatabaseModule,
     JobsModule,
+    AnalyticsModule,
     HealthModule,
     UsersModule,
     AuthModule,
@@ -24,6 +27,7 @@ import { DatabaseModule } from './shared/database/database.module.js';
     VehiclesModule,
     PlacesModule,
     QuotesModule,
+    DecisionsModule,
   ],
 })
 export class AppModule {}

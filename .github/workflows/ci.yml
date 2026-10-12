@@ -105,8 +105,10 @@ jobs:
             exit 0
           fi
           cp contract/openapi.yaml "$RUNNER_TEMP/oas/revision.yaml"
+          # Los cambios aceptados a sabiendas se listan, uno por linea, en contract-acknowledged-changes.txt.
+          cp contract-acknowledged-changes.txt "$RUNNER_TEMP/oas/acknowledged.txt"
           docker run --rm -v "$RUNNER_TEMP/oas:/specs:ro" tufin/oasdiff breaking \
-            /specs/base.yaml /specs/revision.yaml --fail-on ERR
+            /specs/base.yaml /specs/revision.yaml --fail-on ERR --err-ignore /specs/acknowledged.txt
 
       # 7. Tests de integracion contra PostgreSQL real (incluye la deriva del esquema).
       - name: Tests de integracion

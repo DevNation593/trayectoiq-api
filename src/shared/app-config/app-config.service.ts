@@ -12,6 +12,8 @@ export interface AppSettings {
   pricingRecommendedStep: string;
   minIosVersion: string;
   minAndroidVersion: string;
+  /** Dias que una cotizacion guardada conserva coordenadas y etiquetas (06_SECURITY_PRIVACY.md seccion 1). */
+  locationRetentionDays: number;
   /** Valores sugeridos para prellenar el vehiculo, por tipo (RF-03). */
   costPresets: Record<string, unknown>;
 }
@@ -76,6 +78,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   pricingRecommendedStep: '0.05',
   minIosVersion: '1.0.0',
   minAndroidVersion: '1.0.0',
+  locationRetentionDays: 30,
   costPresets: DEFAULT_COST_PRESETS,
 };
 
@@ -123,6 +126,11 @@ export class AppConfigService {
       ),
       minIosVersion: pick('min_ios_version', isVersion, DEFAULT_SETTINGS.minIosVersion),
       minAndroidVersion: pick('min_android_version', isVersion, DEFAULT_SETTINGS.minAndroidVersion),
+      locationRetentionDays: pick(
+        'location_retention_days',
+        isCount,
+        DEFAULT_SETTINGS.locationRetentionDays,
+      ),
       costPresets: pick('cost_presets', isRecord, DEFAULT_SETTINGS.costPresets),
     };
   }

@@ -54,12 +54,13 @@ docker compose up --build
 | `pnpm smoke` | Prueba de humo contra la API levantada con Valhalla, Photon y Mailpit reales: registro, verificación, vehículo, lugares, cotización y recálculo |
 | `pnpm test:live` | Adaptadores contra Valhalla y Photon reales (necesita `docker compose --profile geo up -d`; no corre en CI) |
 | `pnpm benchmark:routing --trips … --destinations …` | Benchmark del gate G2; ver `benchmark/README.md` |
+| `pnpm metrics --from AAAA-MM-DD --to AAAA-MM-DD` | Métricas de validación del periodo, con numerador, denominador e intervalo del 95%; `--json` para procesarlas |
 
 Los tests de integración y de extremo a extremo necesitan `docker compose up -d postgres mailpit`.
 
 ## Autenticación y piezas transversales
 
-- **Protección por defecto:** un guard global exige bearer en toda ruta; lo público se marca con `@Public()`.
+- **Protección por defecto:** un guard global exige bearer en toda ruta; lo público se marca con `@Public()`. `@OptionalAuth()` deja pasar sin bearer pero identifica al usuario si llega uno válido.
 - **Contrato ejecutable:** `@Operation('operationId')` enlaza un handler con `contract/openapi.yaml`. La petición se valida contra ese esquema antes de llegar al handler y se rechazan propiedades que el contrato no define.
 - **Errores:** todo error sale como `application/problem+json` con un `code` del catálogo y el `traceId` de la petición (también en la cabecera `X-Trace-Id`). Para devolver un error, lanzar `AppError`.
 - **Límites de uso:** `@RateLimit('politica')`; políticas en `src/shared/rate-limit/rate-limit.guard.ts`.
@@ -76,6 +77,22 @@ Los tests de integración y de extremo a extremo necesitan `docker compose up -d
 - No se guarda nada en el servidor: la ubicación actual del conductor solo se usa para rutear y no viaja en los tokens.
 - `ROUTING_PROVIDER=fake` usa proveedores deterministas (desarrollo y tests); `valhalla` usa `VALHALLA_URL` y `PHOTON_URL`. En producción `fake` está prohibido.
 - `DATABASE_POOL_MAX` acota el pool de conexiones; en tests va en 4 porque cada archivo de extremo a extremo levanta su propia aplicación.
+
+## Historial y decisión real
+
+- `POST /v1/quotes` guarda un preview a partir de su `previewToken`: vuelve a ejecutar el motor sobre las entradas firmadas del token (no sobre el vehículo actual) y persiste los valores `raw` con el snapshot de entrada. Guardar dos veces el mismo preview devuelve la misma cotización.
+- `GET /v1/quotes` y `GET /v1/quotes/{quoteId}` leen solo lo guardado, sin ejecutar el motor: editar o archivar el vehículo no cambia una cotización. El listado pagina por cursor, de la más nueva a la más antigua.
+- `POST /v1/quotes/{quoteId}/decision` (módulo `decisions`) registra qué hizo el conductor. Hay una decisión por cotización y se puede corregir durante las 24 horas siguientes a guardarla.
+
+## Eventos y métricas
+
+- `AnalyticsService.record(...)` (módulo `analytics`) escribe los eventos de servidor en `analytics_events`. Nunca lanza: si la escritura falla, la operación de negocio termina igual. Los eventos de producto de un usuario con `analytics_opt_out` no se guardan; los de operación sí.
+- `POST /v1/events` recibe los eventos que solo la app puede ver. La lista de nombres y de propiedades permitidas está en `src/modules/analytics/event-catalog.ts`; lo demás se descarta.
+- Las métricas de `08_ANALYTICS_VALIDATION.md` §4 son un archivo SQL cada una, en `scripts/metrics/`:
+
+```bash
+pnpm -s metrics --from 2026-10-01 --to 2026-11-01
+```
 
 ## Rutas y direcciones
 

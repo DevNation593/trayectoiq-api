@@ -5,7 +5,8 @@ import { CLOCK, type Clock } from '../clock/clock.js';
 import { DatabaseService } from '../database/database.service.js';
 import { AppError } from '../errors/app-error.js';
 import { AccessTokens, sessionExpired } from './access-tokens.js';
-import { IS_PUBLIC } from './public.decorator.js';
+import { type AuthContext } from './auth-context.js';
+import { IS_PUBLIC, OPTIONAL_AUTH } from './public.decorator.js';
 
 const sessionRevoked = (): AppError =>
   new AppError(401, 'AUTH_SESSION_REVOKED', 'La sesion fue cerrada');
@@ -28,15 +29,27 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean | undefined>(IS_PUBLIC, [
+    const access = this.reflector.getAllAndOverride<boolean | string | undefined>(IS_PUBLIC, [
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isPublic) {
+    const request = context.switchToHttp().getRequest<FastifyRequest>();
+    if (access === OPTIONAL_AUTH) {
+      try {
+        request.auth = await this.authenticate(request);
+      } catch (error) {
+        if (!(error instanceof AppError)) throw error;
+      }
       return true;
     }
+    if (access) {
+      return true;
+    }
+    request.auth = await this.authenticate(request);
+    return true;
+  }
 
-    const request = context.switchToHttp().getRequest<FastifyRequest>();
+  private async authenticate(request: FastifyRequest): Promise<AuthContext> {
     const match = /^Bearer (.+)$/.exec(request.headers.authorization ?? '');
     if (!match?.[1]) {
       throw sessionExpired();
@@ -60,13 +73,12 @@ export class AuthGuard implements CanActivate {
       throw accountSuspended();
     }
 
-    request.auth = {
+    return {
       userId: session.user.id,
       sessionId: session.id,
       role: session.user.role,
       email: session.user.email,
       emailVerified: session.user.emailVerifiedAt !== null,
     };
-    return true;
   }
 }

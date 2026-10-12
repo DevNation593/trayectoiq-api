@@ -10,7 +10,7 @@ import type { FastifyRequest } from 'fastify';
 import { AppError } from '../errors/app-error.js';
 import { RateLimiter, type RatePolicy } from './rate-limiter.js';
 
-type RateKey = 'ip' | 'email' | 'user';
+type RateKey = 'ip' | 'email' | 'user' | 'installation';
 
 interface RateRule extends RatePolicy {
   by: RateKey;
@@ -21,7 +21,8 @@ const HOUR = 60 * MINUTE;
 
 /**
  * Limites iniciales de 06_SECURITY_PRIVACY.md seccion 4. Una operacion puede tener varias reglas;
- * se aplican todas. "email" es el correo del cuerpo o, con sesion, el del usuario.
+ * se aplican todas. "email" es el correo del cuerpo o, con sesion, el del usuario; "installation",
+ * el anonymousId del cuerpo.
  */
 export const RATE_POLICIES = {
   login: [
@@ -32,7 +33,12 @@ export const RATE_POLICIES = {
   emailCode: [{ by: 'email', limit: 3, windowMs: HOUR }],
   autocomplete: [{ by: 'user', limit: 60, windowMs: MINUTE }],
   preview: [{ by: 'user', limit: 20, windowMs: MINUTE }],
-  events: [{ by: 'ip', limit: 10, windowMs: MINUTE }],
+  // Varias instalaciones comparten IP (redes moviles): el limite fino va por instalacion y el de IP
+  // solo acota a quien rota de id.
+  events: [
+    { by: 'installation', limit: 10, windowMs: MINUTE },
+    { by: 'ip', limit: 120, windowMs: MINUTE },
+  ],
   default: [{ by: 'user', limit: 120, windowMs: MINUTE }],
 } as const satisfies Record<string, readonly RateRule[]>;
 
@@ -72,6 +78,11 @@ export class RateLimitGuard implements CanActivate {
   private subject(by: RateKey, request: FastifyRequest): string | undefined {
     if (by === 'ip') {
       return request.ip;
+    }
+    if (by === 'installation') {
+      // El cuerpo aun no paso por la validacion de contrato: solo se usa si tiene la forma esperada.
+      const id = (request.body as { anonymousId?: unknown } | null | undefined)?.anonymousId;
+      return typeof id === 'string' && id.length <= 64 ? id : request.ip;
     }
     if (by === 'user') {
       // Sin sesion (rutas publicas) el limite por usuario cae sobre la IP.
