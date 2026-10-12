@@ -53,6 +53,9 @@ services:
       # Secretos solo para desarrollo local.
       JWT_ACCESS_SECRET: dev-only-access-secret-0123456789abcdef
       JWT_REFRESH_PEPPER: dev-only-refresh-pepper-fedcba9876543210
+      PREVIEW_TOKEN_SECRET: dev-only-preview-token-secret-13579bdf
+      # Con el perfil geo: ROUTING_PROVIDER=valhalla, VALHALLA_URL=http://valhalla:8002, PHOTON_URL=http://photon:2322
+      ROUTING_PROVIDER: fake
       SMTP_URL: smtp://mailpit:1025
     ports:
       - '3000:3000'

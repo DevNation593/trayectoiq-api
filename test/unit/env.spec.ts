@@ -5,6 +5,7 @@ const valid = {
   DATABASE_URL: 'postgresql://user:pass@localhost:5432/db',
   JWT_ACCESS_SECRET: 'a'.repeat(32),
   JWT_REFRESH_PEPPER: 'b'.repeat(32),
+  PREVIEW_TOKEN_SECRET: 'c'.repeat(32),
 };
 
 describe('loadEnv', () => {
@@ -19,6 +20,11 @@ describe('loadEnv', () => {
       emailFrom: 'TrayectoIQ <no-reply@trayectoiq.local>',
       googleOauthClientIds: [],
       appleSigninAudience: null,
+      previewTokenSecret: 'c'.repeat(32),
+      routingProvider: 'fake',
+      valhallaUrl: null,
+      photonUrl: null,
+      serviceAreaBbox: '-78.65,-0.45,-78.25,0.08',
     });
   });
 
@@ -50,11 +56,14 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ ...valid, NODE_ENV: 'staging-ish' })).toThrow(/NODE_ENV/);
   });
 
-  it.each(['JWT_ACCESS_SECRET', 'JWT_REFRESH_PEPPER'])('exige %s', (name) => {
-    expect(() => loadEnv({ ...valid, [name]: undefined })).toThrow(new RegExp(name));
-  });
+  it.each(['JWT_ACCESS_SECRET', 'JWT_REFRESH_PEPPER', 'PREVIEW_TOKEN_SECRET'])(
+    'exige %s',
+    (name) => {
+      expect(() => loadEnv({ ...valid, [name]: undefined })).toThrow(new RegExp(name));
+    },
+  );
 
-  it.each(['JWT_ACCESS_SECRET', 'JWT_REFRESH_PEPPER'])(
+  it.each(['JWT_ACCESS_SECRET', 'JWT_REFRESH_PEPPER', 'PREVIEW_TOKEN_SECRET'])(
     'rechaza un %s de menos de 32 caracteres',
     (name) => {
       expect(() => loadEnv({ ...valid, [name]: 'corto' })).toThrow(new RegExp(name));
@@ -75,6 +84,9 @@ describe('loadEnv', () => {
       NODE_ENV: 'production',
       SMTP_URL: 'smtps://user:clave@smtp.example.com:465',
       EMAIL_FROM: 'TrayectoIQ <hola@trayectoiq.com>',
+      ROUTING_PROVIDER: 'valhalla',
+      VALHALLA_URL: 'http://valhalla:8002',
+      PHOTON_URL: 'http://photon:2322',
     });
     expect(env.smtpUrl).toBe('smtps://user:clave@smtp.example.com:465');
     expect(env.emailFrom).toBe('TrayectoIQ <hola@trayectoiq.com>');
@@ -82,6 +94,61 @@ describe('loadEnv', () => {
 
   it('rechaza un SMTP_URL que no es smtp:// ni smtps://', () => {
     expect(() => loadEnv({ ...valid, SMTP_URL: 'http://localhost' })).toThrow(/SMTP_URL/);
+  });
+
+  it('rechaza reutilizar un secreto para el token de preview', () => {
+    expect(() => loadEnv({ ...valid, PREVIEW_TOKEN_SECRET: valid.JWT_ACCESS_SECRET })).toThrow(
+      /distintos/,
+    );
+  });
+
+  describe('rutas y direcciones', () => {
+    const geo = {
+      ROUTING_PROVIDER: 'valhalla',
+      VALHALLA_URL: 'http://localhost:8002',
+      PHOTON_URL: 'http://localhost:2322',
+    };
+
+    it('con valhalla lee las URL de Valhalla y de Photon', () => {
+      const env = loadEnv({ ...valid, ...geo });
+      expect(env).toMatchObject({
+        routingProvider: 'valhalla',
+        valhallaUrl: 'http://localhost:8002',
+        photonUrl: 'http://localhost:2322',
+      });
+    });
+
+    it.each(['VALHALLA_URL', 'PHOTON_URL'])('con valhalla exige %s', (name) => {
+      expect(() => loadEnv({ ...valid, ...geo, [name]: undefined })).toThrow(new RegExp(name));
+      expect(() => loadEnv({ ...valid, ...geo, [name]: 'localhost:8002' })).toThrow(
+        new RegExp(name),
+      );
+    });
+
+    it('rechaza un proveedor desconocido', () => {
+      expect(() => loadEnv({ ...valid, ROUTING_PROVIDER: 'google' })).toThrow(/ROUTING_PROVIDER/);
+    });
+
+    it('en produccion no se puede usar el proveedor falso', () => {
+      const production = {
+        ...valid,
+        NODE_ENV: 'production',
+        SMTP_URL: 'smtps://u:p@smtp.example.com:465',
+        EMAIL_FROM: 'TrayectoIQ <hola@trayectoiq.com>',
+      };
+      expect(() => loadEnv(production)).toThrow(/ROUTING_PROVIDER/);
+      expect(() => loadEnv({ ...production, ROUTING_PROVIDER: 'fake' })).toThrow(
+        /ROUTING_PROVIDER/,
+      );
+      expect(loadEnv({ ...production, ...geo }).routingProvider).toBe('valhalla');
+    });
+
+    it('valida el area de servicio', () => {
+      expect(loadEnv({ ...valid, SERVICE_AREA_BBOX: '-79,-1,-78,0' }).serviceAreaBbox).toBe(
+        '-79,-1,-78,0',
+      );
+      expect(() => loadEnv({ ...valid, SERVICE_AREA_BBOX: '1,2,3' })).toThrow(/SERVICE_AREA_BBOX/);
+    });
   });
 
   it('lee los clientes de Google como lista y la audiencia de Apple', () => {

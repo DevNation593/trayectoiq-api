@@ -44,6 +44,8 @@ jobs:
       # Valores de prueba: no protegen nada fuera de este job.
       JWT_ACCESS_SECRET: ci-only-access-secret-0123456789abcdef
       JWT_REFRESH_PEPPER: ci-only-refresh-pepper-fedcba9876543210
+      PREVIEW_TOKEN_SECRET: ci-only-preview-token-secret-13579bdf
+      ROUTING_PROVIDER: fake
       SMTP_URL: smtp://localhost:1025
       MAILPIT_URL: http://localhost:8025
 

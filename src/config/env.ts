@@ -1,4 +1,7 @@
+import { ServiceArea } from '../shared/geo/geo.js';
+
 export type NodeEnv = 'development' | 'test' | 'production';
+export type RoutingProviderName = 'valhalla' | 'fake';
 
 export interface Env {
   nodeEnv: NodeEnv;
@@ -14,6 +17,14 @@ export interface Env {
   googleOauthClientIds: string[];
   /** Bundle id aceptado en Sign in with Apple. null = login con Apple apagado. */
   appleSigninAudience: string | null;
+  /** Firma de routeToken y previewToken. */
+  previewTokenSecret: string;
+  /** `fake` es el proveedor determinista para desarrollo y tests; prohibido en produccion. */
+  routingProvider: RoutingProviderName;
+  valhallaUrl: string | null;
+  photonUrl: string | null;
+  /** "minLng,minLat,maxLng,maxLat". */
+  serviceAreaBbox: string;
 }
 
 const NODE_ENVS: readonly NodeEnv[] = ['development', 'test', 'production'];
@@ -21,6 +32,8 @@ const MIN_SECRET_LENGTH = 32;
 /** Mailpit de docker-compose.yml; solo valido fuera de produccion. */
 const LOCAL_SMTP_URL = 'smtp://localhost:1025';
 const LOCAL_EMAIL_FROM = 'TrayectoIQ <no-reply@trayectoiq.local>';
+/** Distrito Metropolitano de Quito y valles; valor inicial (04_ARCHITECTURE.md seccion 4). */
+const DEFAULT_SERVICE_AREA_BBOX = '-78.65,-0.45,-78.25,0.08';
 
 export class EnvError extends Error {
   constructor(problems: string[]) {
@@ -69,8 +82,14 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   };
   const jwtAccessSecret = secret('JWT_ACCESS_SECRET');
   const jwtRefreshPepper = secret('JWT_REFRESH_PEPPER');
-  if (jwtAccessSecret !== '' && jwtAccessSecret === jwtRefreshPepper) {
-    problems.push('JWT_ACCESS_SECRET y JWT_REFRESH_PEPPER deben ser distintos');
+  const previewTokenSecret = secret('PREVIEW_TOKEN_SECRET');
+  const secrets = [jwtAccessSecret, jwtRefreshPepper, previewTokenSecret].filter(
+    (value) => value !== '',
+  );
+  if (new Set(secrets).size !== secrets.length) {
+    problems.push(
+      'JWT_ACCESS_SECRET, JWT_REFRESH_PEPPER y PREVIEW_TOKEN_SECRET deben ser distintos entre si',
+    );
   }
 
   const isProduction = nodeEnv === 'production';
@@ -85,7 +104,34 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     problems.push('EMAIL_FROM es obligatoria en produccion');
   }
 
-  if (problems.length > 0 || !databaseUrl || !smtpUrl || !emailFrom) {
+  const routingProvider = (read('ROUTING_PROVIDER') ?? (isProduction ? undefined : 'fake')) as
+    RoutingProviderName | undefined;
+  if (routingProvider !== 'valhalla' && routingProvider !== 'fake') {
+    problems.push('ROUTING_PROVIDER debe ser valhalla o fake');
+  } else if (routingProvider === 'fake' && isProduction) {
+    problems.push('ROUTING_PROVIDER no puede ser fake en produccion');
+  }
+  const serviceUrl = (name: string): string | null => {
+    const value = read(name);
+    if (routingProvider !== 'valhalla') return value ?? null;
+    if (!value) {
+      problems.push(`${name} es obligatoria con ROUTING_PROVIDER=valhalla`);
+    } else if (!/^https?:\/\//.test(value)) {
+      problems.push(`${name} debe empezar por http:// o https://`);
+    }
+    return value ?? null;
+  };
+  const valhallaUrl = serviceUrl('VALHALLA_URL');
+  const photonUrl = serviceUrl('PHOTON_URL');
+
+  const serviceAreaBbox = read('SERVICE_AREA_BBOX') ?? DEFAULT_SERVICE_AREA_BBOX;
+  try {
+    ServiceArea.parse(serviceAreaBbox);
+  } catch {
+    problems.push('SERVICE_AREA_BBOX debe tener la forma minLng,minLat,maxLng,maxLat');
+  }
+
+  if (problems.length > 0 || !databaseUrl || !smtpUrl || !emailFrom || !routingProvider) {
     throw new EnvError(problems);
   }
   return {
@@ -101,5 +147,10 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
       .map((id) => id.trim())
       .filter((id) => id !== ''),
     appleSigninAudience: read('APPLE_SIGNIN_AUDIENCE') ?? null,
+    previewTokenSecret,
+    routingProvider,
+    valhallaUrl,
+    photonUrl,
+    serviceAreaBbox,
   };
 }
