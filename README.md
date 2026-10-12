@@ -51,6 +51,7 @@ docker compose up --build
 | `pnpm contract:sync` | Copia el contrato desde `trayectoiq-docs` |
 | `pnpm contract:check` | Falla si `contract/` difiere de `trayectoiq-docs` |
 | `pnpm ci:local` | Los mismos pasos que el CI de un PR |
+| `pnpm smoke` | Prueba de humo contra la API levantada con Valhalla, Photon y Mailpit reales: registro, verificación, vehículo, lugares, cotización y recálculo |
 | `pnpm test:live` | Adaptadores contra Valhalla y Photon reales (necesita `docker compose --profile geo up -d`; no corre en CI) |
 | `pnpm benchmark:routing --trips … --destinations …` | Benchmark del gate G2; ver `benchmark/README.md` |
 
@@ -65,6 +66,16 @@ Los tests de integración y de extremo a extremo necesitan `docker compose up -d
 - **Idempotencia:** automática en toda operación cuyo contrato declare `Idempotency-Key`.
 - **Trabajos en segundo plano:** `JobQueue` sobre PostgreSQL (pg-boss). El correo sale por `Mailer`; en local llega a Mailpit.
 - **Tests de extremo a extremo:** `call(test, 'operationId', …)` (`test/support/api.ts`) llama por `operationId` y comprueba que cada respuesta cumple el contrato. Usan la aplicación real sobre una base temporal migrada; solo se sustituyen el reloj, el envío de correo y la cola.
+
+## Cotización
+
+`POST /v1/quotes/preview` (módulo `quotes`) orquesta vehículo, ruta, cuota y Pricing Engine:
+
+- Con puntos nuevos toma una unidad de cuota, pide la ruta y, si algo falla, devuelve la unidad.
+- La respuesta trae un `routeToken` y un `previewToken` firmados, válidos 15 minutos desde que se calculó la ruta. Con el `routeToken` se recalcula (otra oferta, otra espera, otro regreso) sin rutear ni consumir cuota.
+- No se guarda nada en el servidor: la ubicación actual del conductor solo se usa para rutear y no viaja en los tokens.
+- `ROUTING_PROVIDER=fake` usa proveedores deterministas (desarrollo y tests); `valhalla` usa `VALHALLA_URL` y `PHOTON_URL`. En producción `fake` está prohibido.
+- `DATABASE_POOL_MAX` acota el pool de conexiones; en tests va en 4 porque cada archivo de extremo a extremo levanta su propia aplicación.
 
 ## Rutas y direcciones
 

@@ -3,6 +3,8 @@ import { ConfigModule } from './config/config.module.js';
 import { HealthModule } from './health/health.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { JobsModule } from './modules/jobs/jobs.module.js';
+import { PlacesModule } from './modules/places/places.module.js';
+import { QuotesModule } from './modules/quotes/quotes.module.js';
 import { UsageModule } from './modules/usage/usage.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { VehiclesModule } from './modules/vehicles/vehicles.module.js';
@@ -20,6 +22,8 @@ import { DatabaseModule } from './shared/database/database.module.js';
     AuthModule,
     UsageModule,
     VehiclesModule,
+    PlacesModule,
+    QuotesModule,
   ],
 })
 export class AppModule {}

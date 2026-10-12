@@ -10,7 +10,7 @@ export class DatabaseService implements OnModuleDestroy {
 
   constructor(@Inject(APP_ENV) env: Env) {
     this.client = new PrismaClient({
-      adapter: new PrismaPg({ connectionString: env.databaseUrl }),
+      adapter: new PrismaPg({ connectionString: env.databaseUrl, max: env.databasePoolMax }),
     });
   }
 

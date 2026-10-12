@@ -7,6 +7,8 @@ export interface Env {
   nodeEnv: NodeEnv;
   port: number;
   databaseUrl: string;
+  /** Conexiones maximas del pool de esta instancia. */
+  databasePoolMax: number;
   /** Firma de los access tokens (HS256). */
   jwtAccessSecret: string;
   /** Clave del HMAC con que se guardan refresh tokens, codigos y tokens de un solo uso. */
@@ -69,6 +71,12 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     problems.push('DATABASE_URL es obligatoria');
   } else if (!/^postgres(ql)?:\/\//.test(databaseUrl)) {
     problems.push('DATABASE_URL debe empezar por postgresql://');
+  }
+
+  const rawPoolMax = read('DATABASE_POOL_MAX') ?? '10';
+  const databasePoolMax = Number(rawPoolMax);
+  if (!/^\d+$/.test(rawPoolMax) || databasePoolMax < 1 || databasePoolMax > 50) {
+    problems.push('DATABASE_POOL_MAX debe ser un entero entre 1 y 50');
   }
 
   const secret = (name: string): string => {
@@ -138,6 +146,7 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     nodeEnv,
     port,
     databaseUrl,
+    databasePoolMax,
     jwtAccessSecret,
     jwtRefreshPepper,
     smtpUrl,

@@ -14,6 +14,7 @@ describe('loadEnv', () => {
       nodeEnv: 'development',
       port: 3000,
       databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+      databasePoolMax: 10,
       jwtAccessSecret: 'a'.repeat(32),
       jwtRefreshPepper: 'b'.repeat(32),
       smtpUrl: 'smtp://localhost:1025',
@@ -32,6 +33,13 @@ describe('loadEnv', () => {
     const env = loadEnv({ ...valid, NODE_ENV: 'test', PORT: '8080' });
     expect(env.nodeEnv).toBe('test');
     expect(env.port).toBe(8080);
+  });
+
+  it('lee el tamano del pool de conexiones y rechaza valores fuera de rango', () => {
+    expect(loadEnv({ ...valid, DATABASE_POOL_MAX: '4' }).databasePoolMax).toBe(4);
+    for (const value of ['0', '51', 'muchas', '2.5']) {
+      expect(() => loadEnv({ ...valid, DATABASE_POOL_MAX: value })).toThrow(/DATABASE_POOL_MAX/);
+    }
   });
 
   it('falla nombrando la variable cuando falta DATABASE_URL', () => {

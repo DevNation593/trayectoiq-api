@@ -41,6 +41,7 @@ jobs:
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://trayectoiq:trayectoiq@localhost:5432/trayectoiq
+      DATABASE_POOL_MAX: '4'
       # Valores de prueba: no protegen nada fuera de este job.
       JWT_ACCESS_SECRET: ci-only-access-secret-0123456789abcdef
       JWT_REFRESH_PEPPER: ci-only-refresh-pepper-fedcba9876543210

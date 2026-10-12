@@ -15,6 +15,7 @@ import { ProblemFilter } from './errors/problem.filter.js';
 import { IdempotencyInterceptor } from './idempotency/idempotency.interceptor.js';
 import { RateLimitGuard } from './rate-limit/rate-limit.guard.js';
 import { RateLimiter } from './rate-limit/rate-limiter.js';
+import { SignedTokens } from './signed-tokens/signed-tokens.js';
 
 /** Piezas transversales que cualquier modulo puede inyectar. */
 @Global()
@@ -35,6 +36,7 @@ import { RateLimiter } from './rate-limit/rate-limiter.js';
     },
     AccessTokens,
     AppConfigService,
+    SignedTokens,
     { provide: APP_FILTER, useClass: ProblemFilter },
     // El orden importa: primero quien eres (401), luego cuanto pides (429), luego que pides (422).
     { provide: APP_GUARD, useClass: AuthGuard },
@@ -42,6 +44,14 @@ import { RateLimiter } from './rate-limit/rate-limiter.js';
     { provide: APP_GUARD, useClass: ContractGuard },
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
   ],
-  exports: [CLOCK, Contract, RateLimiter, EMAIL_SENDER, AccessTokens, AppConfigService],
+  exports: [
+    CLOCK,
+    Contract,
+    RateLimiter,
+    EMAIL_SENDER,
+    AccessTokens,
+    AppConfigService,
+    SignedTokens,
+  ],
 })
 export class CoreModule {}

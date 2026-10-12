@@ -530,6 +530,11 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '404':
+          description: NOT_FOUND. El vehículo no existe, está archivado o es de otra cuenta.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
         '422': { $ref: '#/components/responses/ValidationError' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
         '401': { $ref: '#/components/responses/Unauthorized' }

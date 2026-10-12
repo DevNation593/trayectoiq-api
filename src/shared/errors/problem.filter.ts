@@ -36,11 +36,18 @@ export class ProblemFilter implements ExceptionFilter {
     const error = this.normalize(exception);
 
     if (error.status >= 500) {
-      // El detalle queda en el log, enlazado por traceId; al cliente solo le llega el codigo.
-      this.logger.error(
-        { traceId: request.id, method: request.method, path: request.url.split('?')[0] },
-        exception instanceof Error ? exception.stack : String(exception),
-      );
+      const where = {
+        traceId: request.id,
+        method: request.method,
+        path: request.url.split('?')[0],
+      };
+      if (exception instanceof AppError) {
+        // Un 5xx declarado (por ejemplo, un proveedor caido): se anota, sin traza de pila.
+        this.logger.warn({ ...where, code: exception.code });
+      } else {
+        // Inesperado: el detalle queda en el log, enlazado por traceId; al cliente solo le llega el codigo.
+        this.logger.error(where, exception instanceof Error ? exception.stack : String(exception));
+      }
     }
 
     for (const [name, value] of Object.entries(error.options.headers ?? {})) {

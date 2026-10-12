@@ -100,6 +100,23 @@ describe('FakeRoutingProvider', () => {
     expect(provider.calls).toHaveLength(2);
   });
 
+  it('respondWith fija la ruta de la siguiente llamada y solo de esa', async () => {
+    const provider = new FakeRoutingProvider();
+    const fixed = {
+      provider: 'fake',
+      routingProfile: 'motorcycle',
+      pickupDistanceMeters: 2000,
+      pickupDurationSeconds: 300,
+      tripDistanceMeters: 12000,
+      tripDurationSeconds: 1800,
+    };
+    provider.respondWith(fixed);
+
+    expect(await provider.route(moto())).toEqual(fixed);
+    expect((await provider.route(moto())).tripDistanceMeters).not.toBe(12000);
+    expect(provider.calls).toHaveLength(2);
+  });
+
   it('reporta salud', async () => {
     const health = await new FakeRoutingProvider().health();
     expect(health).toMatchObject({ provider: 'fake', status: 'up' });

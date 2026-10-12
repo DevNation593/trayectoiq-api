@@ -25,10 +25,16 @@ export class FakeRoutingProvider implements RoutingProvider {
   /** Entradas recibidas, en orden: los tests cuentan cuantas rutas se pidieron. */
   readonly calls: RouteInput[] = [];
   private pendingFailure: RoutingErrorCode | null = null;
+  private pendingResult: RouteResult | null = null;
 
   /** La siguiente llamada a route() falla con este codigo; las posteriores vuelven a funcionar. */
   failNext(code: RoutingErrorCode): void {
     this.pendingFailure = code;
+  }
+
+  /** La siguiente llamada a route() devuelve exactamente esta ruta; las posteriores vuelven a calcularse. */
+  respondWith(result: RouteResult): void {
+    this.pendingResult = result;
   }
 
   route(input: RouteInput): Promise<RouteResult> {
@@ -37,6 +43,12 @@ export class FakeRoutingProvider implements RoutingProvider {
       const code = this.pendingFailure;
       this.pendingFailure = null;
       return Promise.reject(new RoutingError(code, `Fallo simulado: ${code}`));
+    }
+
+    if (this.pendingResult) {
+      const result = this.pendingResult;
+      this.pendingResult = null;
+      return Promise.resolve(result);
     }
 
     const profile = PROFILES[input.profile];
