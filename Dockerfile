@@ -26,6 +26,8 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+# La API valida sus peticiones contra el contrato en tiempo de ejecucion.
+COPY contract ./contract
 COPY package.json ./
 USER node
 EXPOSE 3000

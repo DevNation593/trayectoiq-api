@@ -32,10 +32,20 @@ jobs:
           --health-interval 3s
           --health-timeout 3s
           --health-retries 20
+      mailpit:
+        image: axllent/mailpit
+        ports:
+          - 1025:1025
+          - 8025:8025
 
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://trayectoiq:trayectoiq@localhost:5432/trayectoiq
+      # Valores de prueba: no protegen nada fuera de este job.
+      JWT_ACCESS_SECRET: ci-only-access-secret-0123456789abcdef
+      JWT_REFRESH_PEPPER: ci-only-refresh-pepper-fedcba9876543210
+      SMTP_URL: smtp://localhost:1025
+      MAILPIT_URL: http://localhost:8025
 
     steps:
       - uses: actions/checkout@v4

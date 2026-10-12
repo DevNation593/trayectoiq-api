@@ -71,10 +71,12 @@ export class PgBossJobQueue implements JobQueue, OnApplicationBootstrap, OnModul
   private async boot(): Promise<void> {
     await this.boss.start();
     for (const [name, { handler, options }] of this.registrations) {
+      const retryDelay = options.retryDelaySeconds ?? DEFAULT_RETRY_DELAY_SECONDS;
       await this.boss.createQueue(name, {
         retryLimit: options.retryLimit ?? DEFAULT_RETRY_LIMIT,
-        retryDelay: options.retryDelaySeconds ?? DEFAULT_RETRY_DELAY_SECONDS,
-        retryBackoff: true,
+        retryDelay,
+        // Con espera 0 (tests) no hay nada que hacer crecer; pg-boss la subiria a 1 s.
+        retryBackoff: retryDelay > 0,
         deleteAfterSeconds: DELETE_FINISHED_AFTER_SECONDS,
       });
       await this.boss.work<object>(name, { pollingIntervalSeconds: 0.5 }, async (jobs) => {
