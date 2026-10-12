@@ -82,6 +82,11 @@ export default defineConfig(
     rules: {
       // En tests se accede a filas recien insertadas; noUncheckedIndexedAccess ya obliga a decidirlo.
       '@typescript-eslint/no-non-null-assertion': 'off',
+      // Un nombre que empieza por "_" declara que se descarta a proposito (por ejemplo al desestructurar).
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
     },
   },
   ...moduleBoundaries,

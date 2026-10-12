@@ -1,6 +1,6 @@
 {
   "repository": "trayectoiq-docs",
-  "commit": "bec1523b47704bda7c4cd9f088bb25a4487345a6",
+  "commit": "e0f1ec5e3023f603880baf96cac499adf63748d1",
   "files": [
     "openapi.yaml",
     "db/schema.sql",

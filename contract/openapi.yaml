@@ -10,6 +10,8 @@ info:
     - Todo error usa `application/problem+json` con el esquema ProblemDetails; el catálogo de `code`
       está en la descripción de ese esquema.
     - Toda operación puede responder 429 (con cabecera Retry-After) y toda operación protegida 401.
+    - Toda operación protegida puede responder 403 (ACCOUNT_SUSPENDED, EMAIL_NOT_VERIFIED o FORBIDDEN) y toda
+      operación con cuerpo o parámetros puede responder 422 VALIDATION_FAILED con el detalle por campo en `errors`.
     - Los costos y ganancias se devuelven redondeados a 2 decimales HALF_UP; los umbrales según
       03_PRICING_ENGINE.md §9.
     - Cambios aditivos por defecto: los clientes deben ignorar campos y valores de enum desconocidos.
@@ -85,6 +87,8 @@ paths:
               schema: { $ref: '#/components/schemas/AuthResponse' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /auth/oauth/google:
     post:
@@ -110,6 +114,8 @@ paths:
               schema: { $ref: '#/components/schemas/AuthResponse' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /auth/oauth/apple:
     post:
@@ -138,6 +144,8 @@ paths:
               schema: { $ref: '#/components/schemas/AuthResponse' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /auth/refresh:
     post:
@@ -162,6 +170,8 @@ paths:
               schema: { $ref: '#/components/schemas/AuthResponse' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /auth/logout:
     post:
@@ -172,6 +182,7 @@ paths:
         '204': { description: Session revoked }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /auth/logout-all:
     post:
@@ -182,6 +193,7 @@ paths:
         '204': { description: All sessions revoked }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /auth/password/forgot:
     post:
@@ -201,6 +213,7 @@ paths:
       responses:
         '202': { description: Accepted regardless of account existence }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /auth/password/reset:
     post:
@@ -246,6 +259,7 @@ paths:
         '422': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /auth/email/resend:
     post:
@@ -256,6 +270,7 @@ paths:
         '202': { description: Code sent if the email is still unverified }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /me:
     get:
@@ -270,6 +285,7 @@ paths:
               schema: { $ref: '#/components/schemas/User' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
     delete:
       tags: [Account]
       operationId: deleteMyAccount
@@ -281,6 +297,8 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /me/export:
     post:
@@ -302,6 +320,8 @@ paths:
                   status: { type: string, enum: [PENDING, PROCESSING, READY, FAILED] }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /me/export/{exportId}:
     get:
@@ -328,6 +348,8 @@ paths:
                   expiresAt: { type: [string, 'null'], format: date-time }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /vehicles:
     get:
@@ -344,6 +366,7 @@ paths:
                 items: { $ref: '#/components/schemas/Vehicle' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
     post:
       tags: [Vehicles]
       operationId: createVehicle
@@ -369,6 +392,7 @@ paths:
         '422': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /vehicles/{vehicleId}:
     parameters:
@@ -386,6 +410,8 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
     put:
       tags: [Vehicles]
       operationId: updateVehicle
@@ -406,6 +432,7 @@ paths:
         '422': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
     delete:
       tags: [Vehicles]
       operationId: archiveVehicle
@@ -418,6 +445,8 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /places/autocomplete:
     get:
@@ -447,6 +476,8 @@ paths:
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /places/{placeId}:
     get:
@@ -467,6 +498,8 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /quotes/preview:
     post:
@@ -529,6 +562,8 @@ paths:
                   nextCursor: { type: [string, 'null'] }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
     post:
       tags: [Quotes]
       operationId: saveQuote
@@ -558,6 +593,7 @@ paths:
               schema: { $ref: '#/components/schemas/ProblemDetails' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /quotes/{quoteId}:
     get:
@@ -575,6 +611,8 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /quotes/{quoteId}/decision:
     post:
@@ -603,6 +641,7 @@ paths:
         '422': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /usage/quote-quota:
     get:
@@ -628,6 +667,7 @@ paths:
                   resetAt: { type: [string, 'null'], format: date-time }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /subscriptions/apple/verify:
     post:
@@ -654,6 +694,7 @@ paths:
         '422': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /subscriptions/google/verify:
     post:
@@ -680,6 +721,8 @@ paths:
               schema: { $ref: '#/components/schemas/SubscriptionEntitlement' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /subscriptions/restore:
     post:
@@ -708,6 +751,8 @@ paths:
               schema: { $ref: '#/components/schemas/SubscriptionEntitlement' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /webhooks/apple:
     post:
@@ -822,6 +867,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /admin/users/{userId}/suspension:
     put:
@@ -849,6 +895,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /admin/feature-flags/{key}:
     put:
@@ -876,6 +923,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /admin/app-config/{key}:
     put:

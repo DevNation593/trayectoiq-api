@@ -5,6 +5,8 @@ import { configureApp, fastifyOptions } from '../../src/app.factory.js';
 import { AppModule } from '../../src/app.module.js';
 import { APP_ENV } from '../../src/config/config.module.js';
 import { type Env, loadEnv } from '../../src/config/env.js';
+import { InlineJobQueue } from '../../src/modules/jobs/inline-job-queue.js';
+import { JOB_QUEUE } from '../../src/modules/jobs/job-queue.js';
 import { CLOCK } from '../../src/shared/clock/clock.js';
 import { EMAIL_SENDER } from '../../src/shared/email/email-sender.js';
 import { FakeEmailSender } from '../../src/shared/email/fake-email-sender.js';
@@ -16,6 +18,7 @@ export interface TestApp {
   env: Env;
   clock: FakeClock;
   emails: FakeEmailSender;
+  jobs: InlineJobQueue;
   database: TempDatabase;
   close: () => Promise<void>;
 }
@@ -27,13 +30,15 @@ export interface TestAppOptions {
 
 /**
  * La aplicacion real, con la misma configuracion que produccion, sobre una base migrada propia.
- * Solo se sustituyen el reloj y el envio de correo, que el test necesita controlar y observar.
+ * Se sustituyen el reloj y el envio de correo, que el test necesita controlar y observar, y la cola
+ * de trabajos por una que los ejecuta al instante (la cola real tiene sus tests de integracion).
  */
 export async function createTestApp(options: TestAppOptions = {}): Promise<TestApp> {
   const database = await createMigratedDatabase('app');
   const env = loadEnv({ ...process.env, NODE_ENV: 'test', DATABASE_URL: database.url });
   const clock = new FakeClock();
   const emails = new FakeEmailSender();
+  const jobs = new InlineJobQueue();
 
   try {
     const moduleRef = await Test.createTestingModule({
@@ -46,6 +51,8 @@ export async function createTestApp(options: TestAppOptions = {}): Promise<TestA
       .useValue(clock)
       .overrideProvider(EMAIL_SENDER)
       .useValue(emails)
+      .overrideProvider(JOB_QUEUE)
+      .useValue(jobs)
       .compile();
 
     const app = moduleRef.createNestApplication<NestFastifyApplication>(
@@ -60,6 +67,7 @@ export async function createTestApp(options: TestAppOptions = {}): Promise<TestA
       env,
       clock,
       emails,
+      jobs,
       database,
       close: async () => {
         await app.close();

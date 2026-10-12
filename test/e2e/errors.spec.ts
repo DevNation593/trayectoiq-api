@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Public } from '../../src/shared/auth/public.decorator.js';
 import { Contract } from '../../src/shared/contract/contract.js';
 import { AppError } from '../../src/shared/errors/app-error.js';
+import { registerUser } from '../support/api.js';
 import { createTestApp, type TestApp } from '../support/test-app.js';
 
 @Public()
@@ -27,6 +28,15 @@ class FailingController {
   }
 }
 
+@Controller('test-protegido')
+class ProtectedController {
+  /** A proposito no usa @CurrentAuth: la proteccion debe venir del guard, no del handler. */
+  @Get()
+  secret(): { secreto: string } {
+    return { secreto: 'solo con sesion' };
+  }
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 describe('formato de error (ProblemDetails) y traceId', () => {
@@ -34,7 +44,7 @@ describe('formato de error (ProblemDetails) y traceId', () => {
   const contract = Contract.load();
 
   beforeAll(async () => {
-    test = await createTestApp({ controllers: [FailingController] });
+    test = await createTestApp({ controllers: [FailingController, ProtectedController] });
   });
   afterAll(() => test?.close());
 
@@ -122,6 +132,21 @@ describe('formato de error (ProblemDetails) y traceId', () => {
     });
 
     expect(response.headers['x-trace-id']).toMatch(UUID);
+  });
+
+  it('una ruta sin @Public exige sesion aunque su handler no pida el usuario', async () => {
+    const anonymous = await test.app.inject({ method: 'GET', url: '/v1/test-protegido' });
+    expect(anonymous.statusCode).toBe(401);
+    expect(anonymous.json()).toMatchObject({ code: 'AUTH_TOKEN_EXPIRED' });
+    expect(anonymous.body).not.toContain('solo con sesion');
+
+    const session = await registerUser(test);
+    const authenticated = await test.app.inject({
+      method: 'GET',
+      url: '/v1/test-protegido',
+      headers: { authorization: `Bearer ${session.accessToken}` },
+    });
+    expect(authenticated.statusCode).toBe(200);
   });
 
   it('una respuesta correcta no se toca', async () => {
