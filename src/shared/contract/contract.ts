@@ -126,6 +126,16 @@ export class Contract {
     return { operationId, method, path, public: isPublic };
   }
 
+  /** true si el contrato exige la cabecera Idempotency-Key en esa operacion. */
+  requiresIdempotencyKey(operationId: string): boolean {
+    return this.find(operationId).parameters.some(
+      (parameter) =>
+        parameter.in === 'header' &&
+        parameter.name.toLowerCase() === 'idempotency-key' &&
+        parameter.required === true,
+    );
+  }
+
   validateRequest(operationId: string, parts: RequestParts): FieldError[] {
     const operation = this.find(operationId);
     const errors: FieldError[] = [];

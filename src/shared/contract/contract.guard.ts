@@ -10,7 +10,7 @@ import type { FastifyRequest } from 'fastify';
 import { AppError } from '../errors/app-error.js';
 import { Contract } from './contract.js';
 
-const OPERATION = 'tiq:operation';
+export const OPERATION = 'tiq:operation';
 
 /**
  * Enlaza un handler con su operationId de openapi.yaml: la peticion se valida contra ese esquema

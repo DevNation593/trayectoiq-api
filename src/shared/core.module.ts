@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { APP_ENV } from '../config/config.module.js';
 import type { Env } from '../config/env.js';
 import { AccessTokens } from './auth/access-tokens.js';
@@ -10,6 +10,7 @@ import { Contract } from './contract/contract.js';
 import { EMAIL_SENDER } from './email/email-sender.js';
 import { SmtpEmailSender } from './email/smtp-email-sender.js';
 import { ProblemFilter } from './errors/problem.filter.js';
+import { IdempotencyInterceptor } from './idempotency/idempotency.interceptor.js';
 import { RateLimitGuard } from './rate-limit/rate-limit.guard.js';
 import { RateLimiter } from './rate-limit/rate-limiter.js';
 
@@ -35,6 +36,7 @@ import { RateLimiter } from './rate-limit/rate-limiter.js';
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_GUARD, useClass: ContractGuard },
+    { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
   ],
   exports: [CLOCK, Contract, RateLimiter, EMAIL_SENDER, AccessTokens],
 })
