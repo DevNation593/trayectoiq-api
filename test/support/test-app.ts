@@ -1,0 +1,73 @@
+import type { Type } from '@nestjs/common';
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { Test } from '@nestjs/testing';
+import { configureApp, fastifyOptions } from '../../src/app.factory.js';
+import { AppModule } from '../../src/app.module.js';
+import { APP_ENV } from '../../src/config/config.module.js';
+import { type Env, loadEnv } from '../../src/config/env.js';
+import { CLOCK } from '../../src/shared/clock/clock.js';
+import { EMAIL_SENDER } from '../../src/shared/email/email-sender.js';
+import { FakeEmailSender } from '../../src/shared/email/fake-email-sender.js';
+import { FakeClock } from './fake-clock.js';
+import { createMigratedDatabase, type TempDatabase } from './temp-database.js';
+
+export interface TestApp {
+  app: NestFastifyApplication;
+  env: Env;
+  clock: FakeClock;
+  emails: FakeEmailSender;
+  database: TempDatabase;
+  close: () => Promise<void>;
+}
+
+export interface TestAppOptions {
+  /** Controladores extra, solo para el test (por ejemplo, uno que lanza errores). */
+  controllers?: Type[];
+}
+
+/**
+ * La aplicacion real, con la misma configuracion que produccion, sobre una base migrada propia.
+ * Solo se sustituyen el reloj y el envio de correo, que el test necesita controlar y observar.
+ */
+export async function createTestApp(options: TestAppOptions = {}): Promise<TestApp> {
+  const database = await createMigratedDatabase('app');
+  const env = loadEnv({ ...process.env, NODE_ENV: 'test', DATABASE_URL: database.url });
+  const clock = new FakeClock();
+  const emails = new FakeEmailSender();
+
+  try {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+      controllers: options.controllers ?? [],
+    })
+      .overrideProvider(APP_ENV)
+      .useValue(env)
+      .overrideProvider(CLOCK)
+      .useValue(clock)
+      .overrideProvider(EMAIL_SENDER)
+      .useValue(emails)
+      .compile();
+
+    const app = moduleRef.createNestApplication<NestFastifyApplication>(
+      new FastifyAdapter(fastifyOptions(env)),
+    );
+    configureApp(app);
+    await app.init();
+    await app.getHttpAdapter().getInstance().ready();
+
+    return {
+      app,
+      env,
+      clock,
+      emails,
+      database,
+      close: async () => {
+        await app.close();
+        await database.drop();
+      },
+    };
+  } catch (error) {
+    await database.drop();
+    throw error;
+  }
+}
