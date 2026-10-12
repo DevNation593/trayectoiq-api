@@ -442,8 +442,9 @@ paths:
             application/json:
               schema:
                 type: array
-                maxItems: 10
+                maxItems: 5
                 items: { $ref: '#/components/schemas/PlaceSuggestion' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
@@ -1033,7 +1034,7 @@ components:
             - Genéricos: VALIDATION_FAILED, NOT_FOUND, RATE_LIMITED, IDEMPOTENCY_KEY_REUSED, INTERNAL_ERROR.
             - Vehículos: VEHICLE_LIMIT_REACHED.
             - Rutas: ROUTE_UNAVAILABLE (422, no hay ruta entre los puntos), PLACE_NOT_FOUND,
-              ROUTING_PROVIDER_UNAVAILABLE (503), OUT_OF_SERVICE_AREA.
+              ROUTING_PROVIDER_UNAVAILABLE (503), GEOCODING_PROVIDER_UNAVAILABLE (503), OUT_OF_SERVICE_AREA.
             - Cotización: QUOTE_INVALID_ROUTE_INPUT, ROUTE_TOKEN_EXPIRED, PREVIEW_TOKEN_EXPIRED,
               PREVIEW_TOKEN_INVALID, QUOTA_EXHAUSTED (402), DECISION_LOCKED.
             - Pricing (03_PRICING_ENGINE.md §14): PRICING_INVALID_ROUTE, PRICING_INVALID_PROBABILITY,
@@ -1172,7 +1173,11 @@ components:
       type: object
       required: [id, label]
       properties:
-        id: { type: string }
+        id:
+          type: string
+          description: |
+            Identificador opaco y autocontenido: lleva la etiqueta y las coordenadas del lugar, de modo que
+            resolverlo no depende de volver a consultar al geocoder. El cliente no debe interpretarlo.
         label: { type: string }
         secondaryLabel: { type: string }
 

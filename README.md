@@ -51,8 +51,23 @@ docker compose up --build
 | `pnpm contract:sync` | Copia el contrato desde `trayectoiq-docs` |
 | `pnpm contract:check` | Falla si `contract/` difiere de `trayectoiq-docs` |
 | `pnpm ci:local` | Los mismos pasos que el CI de un PR |
+| `pnpm test:live` | Adaptadores contra Valhalla y Photon reales (necesita `docker compose --profile geo up -d`; no corre en CI) |
+| `pnpm benchmark:routing --trips … --destinations …` | Benchmark del gate G2; ver `benchmark/README.md` |
 
 Los tests de integración y de extremo a extremo necesitan `docker compose up -d postgres`.
+
+## Rutas y direcciones
+
+```bash
+docker compose --profile geo up -d   # Valhalla en :8002 y Photon en :2322, con datos de Ecuador
+pnpm test:live
+```
+
+La primera vez Valhalla descarga el extracto de Ecuador y construye sus teselas, y Photon construye su índice desde el volcado oficial (no existe uno precompilado para Ecuador); tarda unos minutos. Después reutilizan sus volúmenes.
+
+- `src/modules/routing`: puerto `RoutingProvider`, adaptador de Valhalla, proveedor falso determinista y `ServiceAreaRoutingProvider`, que rechaza puntos fuera del área de servicio antes de llamar a cualquier proveedor.
+- `src/modules/places`: puerto `GeocodingProvider`, adaptador de Photon y geocoder falso. El `placeId` es autocontenido: resolver un lugar no consulta al geocoder.
+- Los tests de los adaptadores usan su cliente HTTP real contra respuestas grabadas (`test/fixtures`); CI no sale a la red.
 
 ## Pricing Engine
 

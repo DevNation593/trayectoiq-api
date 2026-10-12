@@ -195,6 +195,19 @@ console.log(
     `${report.sample.destinations} destinos, ${report.weekend.trips} viajes de fin de semana aparte.`,
 );
 for (const problem of report.sample.problems) console.log(`  - ${problem}`);
+
+console.log('');
+console.log('Sesgo de duracion por vehiculo y franja (informativo):');
+console.table(
+  Object.entries(report.biasByVehicle).flatMap(([vehicle, byBand]) =>
+    Object.entries(byBand).map(([band, { trips: count, bias }]) => ({
+      vehiculo: vehicle,
+      franja: band,
+      n: count,
+      sesgo: bias === null ? 'sin datos' : `${(bias * 100).toFixed(1)}%`,
+    })),
+  ),
+);
 console.log(`\nVeredicto G2: ${report.verdict}`);
 
 if (args.out) {

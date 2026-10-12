@@ -201,6 +201,22 @@ describe('evaluate', () => {
     expect(report.weekend.durationAbsMedian).toBeCloseTo(2, 9);
   });
 
+  it('informa el sesgo por tipo de vehiculo y franja, sin que cuente para el veredicto', () => {
+    const report = evaluate(
+      [
+        trip({ id: 'm1', vehicleType: 'MOTORCYCLE', estimatedDurationSeconds: 1300 }),
+        trip({ id: 'm2', vehicleType: 'MOTORCYCLE', estimatedDurationSeconds: 1100 }),
+        trip({ id: 'c1', vehicleType: 'CAR', estimatedDurationSeconds: 900 }),
+      ],
+      [],
+    );
+    expect(report.biasByVehicle.MOTORCYCLE.OFF_PEAK).toMatchObject({ trips: 2 });
+    expect(report.biasByVehicle.MOTORCYCLE.OFF_PEAK.bias).toBeCloseTo(0.2, 9);
+    expect(report.biasByVehicle.CAR.OFF_PEAK.bias).toBeCloseTo(-0.1, 9);
+    expect(report.biasByVehicle.CAR.PEAK_AM).toEqual({ trips: 0, bias: null });
+    expect(report.metrics.some((candidate) => candidate.id.includes('MOTORCYCLE'))).toBe(false);
+  });
+
   it('una metrica sin datos no pasa: no hay evidencia', () => {
     const report = evaluate([trip({ realDistanceMeters: null })], []);
     expect(metric(report, 'distance_abs_median')).toMatchObject({ value: null, pass: false });

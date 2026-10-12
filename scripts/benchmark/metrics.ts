@@ -47,6 +47,8 @@ export interface BenchmarkReport {
     problems: string[];
   };
   weekend: { trips: number; durationAbsMedian: number | null };
+  /** Informativo: Valhalla no distingue moto de carro, asi que el sesgo puede diferir por vehiculo. */
+  biasByVehicle: Record<VehicleType, Record<Band, { trips: number; bias: number | null }>>;
 }
 
 /** Umbrales de la seccion 4 del documento. Cambiarlos exige cambiar el documento. */
@@ -225,6 +227,25 @@ export function evaluate(trips: TripSample[], geocode: GeocodeSample[]): Benchma
     );
   });
 
+  const vehicles: VehicleType[] = ['MOTORCYCLE', 'CAR'];
+  const biasByVehicle = Object.fromEntries(
+    vehicles.map((vehicle) => [
+      vehicle,
+      Object.fromEntries(
+        bands.map((band) => {
+          const errors = present(
+            weekday
+              .filter(
+                (trip) => trip.vehicleType === vehicle && bandOf(trip.departureLocal) === band,
+              )
+              .map(durationError),
+          );
+          return [band, { trips: errors.length, bias: mean(errors) }];
+        }),
+      ),
+    ]),
+  ) as BenchmarkReport['biasByVehicle'];
+
   const routeLatencies = present(trips.map((trip) => trip.latencyMs));
   const geocodeLatencies = present(geocode.map((sample) => sample.latencyMs));
   const unrouted = weekday.filter((trip) => !trip.routed).length;
@@ -348,5 +369,6 @@ export function evaluate(trips: TripSample[], geocode: GeocodeSample[]): Benchma
       trips: weekend.length,
       durationAbsMedian: median(absolute(present(weekend.map(durationError)))),
     },
+    biasByVehicle,
   };
 }
