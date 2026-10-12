@@ -42,8 +42,8 @@ docker compose up --build
 | `pnpm test:golden` | Los 9 fixtures golden y los 16 inválidos del Pricing Engine, con igualdad exacta |
 | `pnpm fixtures:check` | Los fixtures contra el motor de referencia en Python (necesita Python 3) |
 | `pnpm pricing:calc <archivo.json>` | Calcula una cotización desde un archivo con la forma de un fixture |
-| `pnpm test:int` | Integración contra PostgreSQL real; crea y borra sus propias bases |
-| `pnpm test:contract` | La API implementada contra `contract/openapi.yaml` (se llena en M3) |
+| `pnpm test:int` | Integración contra PostgreSQL real (y Mailpit para el correo); crea y borra sus propias bases |
+| `pnpm test:contract` | Reservado; hoy las pruebas de contrato van dentro de `test:e2e`, que valida cada respuesta contra `contract/openapi.yaml` |
 | `pnpm test:e2e` | La aplicación completa por HTTP |
 | `pnpm openapi:lint` | Valida `contract/openapi.yaml` |
 | `pnpm db:migrate` | Aplica migraciones (`prisma migrate deploy`) |
@@ -54,7 +54,17 @@ docker compose up --build
 | `pnpm test:live` | Adaptadores contra Valhalla y Photon reales (necesita `docker compose --profile geo up -d`; no corre en CI) |
 | `pnpm benchmark:routing --trips … --destinations …` | Benchmark del gate G2; ver `benchmark/README.md` |
 
-Los tests de integración y de extremo a extremo necesitan `docker compose up -d postgres`.
+Los tests de integración y de extremo a extremo necesitan `docker compose up -d postgres mailpit`.
+
+## Autenticación y piezas transversales
+
+- **Protección por defecto:** un guard global exige bearer en toda ruta; lo público se marca con `@Public()`.
+- **Contrato ejecutable:** `@Operation('operationId')` enlaza un handler con `contract/openapi.yaml`. La petición se valida contra ese esquema antes de llegar al handler y se rechazan propiedades que el contrato no define.
+- **Errores:** todo error sale como `application/problem+json` con un `code` del catálogo y el `traceId` de la petición (también en la cabecera `X-Trace-Id`). Para devolver un error, lanzar `AppError`.
+- **Límites de uso:** `@RateLimit('politica')`; políticas en `src/shared/rate-limit/rate-limit.guard.ts`.
+- **Idempotencia:** automática en toda operación cuyo contrato declare `Idempotency-Key`.
+- **Trabajos en segundo plano:** `JobQueue` sobre PostgreSQL (pg-boss). El correo sale por `Mailer`; en local llega a Mailpit.
+- **Tests de extremo a extremo:** `call(test, 'operationId', …)` (`test/support/api.ts`) llama por `operationId` y comprueba que cada respuesta cumple el contrato. Usan la aplicación real sobre una base temporal migrada; solo se sustituyen el reloj, el envío de correo y la cola.
 
 ## Rutas y direcciones
 

@@ -26,6 +26,8 @@ export interface TestApp {
 export interface TestAppOptions {
   /** Controladores extra, solo para el test (por ejemplo, uno que lanza errores). */
   controllers?: Type[];
+  /** Proveedores a sustituir, como pares [token, valor]. */
+  overrides?: [token: unknown, value: unknown][];
 }
 
 /**
@@ -41,10 +43,14 @@ export async function createTestApp(options: TestAppOptions = {}): Promise<TestA
   const jobs = new InlineJobQueue();
 
   try {
-    const moduleRef = await Test.createTestingModule({
+    let builder = Test.createTestingModule({
       imports: [AppModule],
       controllers: options.controllers ?? [],
-    })
+    });
+    for (const [token, value] of options.overrides ?? []) {
+      builder = builder.overrideProvider(token).useValue(value);
+    }
+    const moduleRef = await builder
       .overrideProvider(APP_ENV)
       .useValue(env)
       .overrideProvider(CLOCK)

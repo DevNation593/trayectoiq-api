@@ -17,6 +17,8 @@ describe('loadEnv', () => {
       jwtRefreshPepper: 'b'.repeat(32),
       smtpUrl: 'smtp://localhost:1025',
       emailFrom: 'TrayectoIQ <no-reply@trayectoiq.local>',
+      googleOauthClientIds: [],
+      appleSigninAudience: null,
     });
   });
 
@@ -80,6 +82,20 @@ describe('loadEnv', () => {
 
   it('rechaza un SMTP_URL que no es smtp:// ni smtps://', () => {
     expect(() => loadEnv({ ...valid, SMTP_URL: 'http://localhost' })).toThrow(/SMTP_URL/);
+  });
+
+  it('lee los clientes de Google como lista y la audiencia de Apple', () => {
+    const env = loadEnv({
+      ...valid,
+      GOOGLE_OAUTH_CLIENT_IDS:
+        ' android.apps.googleusercontent.com , ios.apps.googleusercontent.com ',
+      APPLE_SIGNIN_AUDIENCE: 'com.trayectoiq.app',
+    });
+    expect(env.googleOauthClientIds).toEqual([
+      'android.apps.googleusercontent.com',
+      'ios.apps.googleusercontent.com',
+    ]);
+    expect(env.appleSigninAudience).toBe('com.trayectoiq.app');
   });
 
   it('no incluye el valor de ningun secreto en el mensaje de error', () => {

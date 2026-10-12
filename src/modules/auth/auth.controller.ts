@@ -9,11 +9,15 @@ import {
   type LoginInput,
   type RegisterInput,
 } from './auth.service.js';
+import { OidcVerifier } from './oidc-verifier.js';
 
 /** Los cuerpos llegan ya validados contra openapi.yaml por ContractGuard. */
 @Controller('auth')
 export class AuthController {
-  constructor(@Inject(AuthService) private readonly auth: AuthService) {}
+  constructor(
+    @Inject(AuthService) private readonly auth: AuthService,
+    @Inject(OidcVerifier) private readonly oidc: OidcVerifier,
+  ) {}
 
   @Public()
   @Post('register')
@@ -30,6 +34,39 @@ export class AuthController {
   @RateLimit('login')
   login(@Body() body: LoginInput): Promise<AuthResponse> {
     return this.auth.login(body);
+  }
+
+  @Public()
+  @Post('oauth/google')
+  @HttpCode(HttpStatus.OK)
+  @Operation('loginGoogle')
+  @RateLimit('login')
+  async loginGoogle(@Body() body: { idToken: string; nonce: string }): Promise<AuthResponse> {
+    const profile = await this.oidc.verify('GOOGLE', body.idToken, body.nonce);
+    return this.auth.loginWithProvider('GOOGLE', profile);
+  }
+
+  /**
+   * `authorizationCode` se valida pero aun no se usa: hara falta para revocar el acceso en Apple
+   * al eliminar la cuenta (hito M8). Apple solo envia el nombre en el primer inicio.
+   */
+  @Public()
+  @Post('oauth/apple')
+  @HttpCode(HttpStatus.OK)
+  @Operation('loginApple')
+  @RateLimit('login')
+  async loginApple(
+    @Body()
+    body: {
+      identityToken: string;
+      nonce: string;
+      givenName?: string | null;
+      familyName?: string | null;
+    },
+  ): Promise<AuthResponse> {
+    const profile = await this.oidc.verify('APPLE', body.identityToken, body.nonce);
+    const displayName = [body.givenName, body.familyName].filter(Boolean).join(' ');
+    return this.auth.loginWithProvider('APPLE', profile, {}, displayName);
   }
 
   @Public()

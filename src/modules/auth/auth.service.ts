@@ -10,6 +10,7 @@ import { AppError } from '../../shared/errors/app-error.js';
 import { Mailer } from '../jobs/mailer.js';
 import { toUserDto, type UserDto } from '../users/user.dto.js';
 import { normalizeEmail, UsersService } from '../users/users.service.js';
+import type { OidcProfile, OidcProvider } from './oidc-verifier.js';
 import { hashPassword, isCommonPassword, verifyPassword } from './passwords.js';
 import { type DeviceInfo, SessionsService, type SessionTokens } from './sessions.service.js';
 
@@ -110,6 +111,80 @@ export class AuthService {
       throw accountSuspended();
     }
     const tokens = await this.sessions.create(user.id, input);
+    return { ...tokens, user: toUserDto(user) };
+  }
+
+  /**
+   * Inicio con Google o Apple a partir de un token ya verificado. Regla de vinculacion
+   * (06_SECURITY_PRIVACY.md seccion 2): se une a una cuenta existente con ese correo solo si la
+   * cuenta ya lo tenia verificado; si no, quien la registro pierde su contrasena y sus sesiones.
+   */
+  async loginWithProvider(
+    provider: OidcProvider,
+    profile: OidcProfile,
+    device: DeviceInfo = {},
+    displayName?: string,
+  ): Promise<AuthResponse> {
+    const db = this.database.client;
+    const identity = await db.oauthIdentity.findUnique({
+      where: { provider_providerSubject: { provider, providerSubject: profile.subject } },
+      include: { user: true },
+    });
+
+    let user: User;
+    if (identity) {
+      user = identity.user;
+      if (user.deletedAt || user.status === 'DELETED') {
+        throw invalidCredentials();
+      }
+    } else {
+      // Sin identidad previa hace falta un correo que el proveedor de por verificado.
+      if (!profile.email || !profile.emailVerified) {
+        throw new AppError(
+          401,
+          'AUTH_INVALID_CREDENTIALS',
+          'El proveedor no confirmo un correo verificado para esta cuenta',
+        );
+      }
+      const email = normalizeEmail(profile.email);
+      const now = this.clock.now();
+      const existing = await this.users.findActiveByEmail(email);
+
+      if (!existing) {
+        user = await db.user.create({
+          data: { email, emailVerifiedAt: now, displayName: displayName?.trim() || null },
+        });
+      } else if (existing.emailVerifiedAt) {
+        user = existing;
+      } else {
+        // Alguien registro este correo sin demostrar que era suyo: se le retira todo acceso.
+        await this.sessions.revokeAll(existing.id, 'ACCOUNT_CLAIMED');
+        [user] = await db.$transaction([
+          db.user.update({
+            where: { id: existing.id },
+            data: { passwordHash: null, emailVerifiedAt: now, updatedAt: now },
+          }),
+          db.emailVerificationCode.updateMany({
+            where: { userId: existing.id, usedAt: null },
+            data: { usedAt: now },
+          }),
+        ]);
+      }
+      await db.oauthIdentity.create({
+        data: {
+          userId: user.id,
+          provider,
+          providerSubject: profile.subject,
+          emailAtProvider: email,
+          createdAt: now,
+        },
+      });
+    }
+
+    if (user.status !== 'ACTIVE') {
+      throw accountSuspended();
+    }
+    const tokens = await this.sessions.create(user.id, device);
     return { ...tokens, user: toUserDto(user) };
   }
 

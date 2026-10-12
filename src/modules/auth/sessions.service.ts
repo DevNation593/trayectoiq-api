@@ -25,7 +25,8 @@ export interface DeviceInfo {
   appVersion?: string;
 }
 
-export type RevokeReason = 'LOGOUT' | 'LOGOUT_ALL' | 'REUSE_DETECTED' | 'PASSWORD_RESET';
+export type RevokeReason =
+  'LOGOUT' | 'LOGOUT_ALL' | 'REUSE_DETECTED' | 'PASSWORD_RESET' | 'ACCOUNT_CLAIMED';
 
 /** Una sesion sin uso vence a los 60 dias; cada rotacion la renueva. */
 const SESSION_TTL_MS = 60 * 24 * 60 * 60 * 1000;

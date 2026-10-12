@@ -10,6 +10,10 @@ export interface Env {
   jwtRefreshPepper: string;
   smtpUrl: string;
   emailFrom: string;
+  /** Clientes OAuth de Google aceptados como audiencia (Android, iOS). Vacio = login con Google apagado. */
+  googleOauthClientIds: string[];
+  /** Bundle id aceptado en Sign in with Apple. null = login con Apple apagado. */
+  appleSigninAudience: string | null;
 }
 
 const NODE_ENVS: readonly NodeEnv[] = ['development', 'test', 'production'];
@@ -84,5 +88,18 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   if (problems.length > 0 || !databaseUrl || !smtpUrl || !emailFrom) {
     throw new EnvError(problems);
   }
-  return { nodeEnv, port, databaseUrl, jwtAccessSecret, jwtRefreshPepper, smtpUrl, emailFrom };
+  return {
+    nodeEnv,
+    port,
+    databaseUrl,
+    jwtAccessSecret,
+    jwtRefreshPepper,
+    smtpUrl,
+    emailFrom,
+    googleOauthClientIds: (read('GOOGLE_OAUTH_CLIENT_IDS') ?? '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter((id) => id !== ''),
+    appleSigninAudience: read('APPLE_SIGNIN_AUDIENCE') ?? null,
+  };
 }
