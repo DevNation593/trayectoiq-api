@@ -8,428 +8,478 @@ datasource db {
   provider = "postgresql"
 }
 
-model admin_audit_logs {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  actor_user_id String?  @db.Uuid
-  actor_email   String
-  action        String
-  target_type   String
-  target_id     String?
-  reason        String?
-  before_value  Json?
-  after_value   Json?
-  trace_id      String?
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
-  users         users?   @relation(fields: [actor_user_id], references: [id], onUpdate: NoAction)
+model AdminAuditLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  actorEmail  String   @map("actor_email")
+  action      String
+  targetType  String   @map("target_type")
+  targetId    String?  @map("target_id")
+  reason      String?
+  beforeValue Json?    @map("before_value")
+  afterValue  Json?    @map("after_value")
+  traceId     String?  @map("trace_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user        User?    @relation(fields: [actorUserId], references: [id], onUpdate: NoAction)
 
-  @@index([created_at(sort: Desc)], map: "admin_audit_created_idx")
+  @@index([createdAt(sort: Desc)], map: "admin_audit_created_idx")
+  @@map("admin_audit_logs")
 }
 
-model analytics_events {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id       String?  @db.Uuid
-  anonymous_id  String?
-  event_name    String
-  event_version Int      @default(1)
-  properties    Json     @default("{}")
-  occurred_at   DateTime @db.Timestamptz(6)
-  received_at   DateTime @default(now()) @db.Timestamptz(6)
-  users         users?   @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+model AnalyticsEvent {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  anonymousId  String?  @map("anonymous_id")
+  eventName    String   @map("event_name")
+  eventVersion Int      @default(1) @map("event_version")
+  properties   Json     @default("{}")
+  occurredAt   DateTime @map("occurred_at") @db.Timestamptz(6)
+  receivedAt   DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  user         User?    @relation(fields: [userId], references: [id], onUpdate: NoAction)
 
-  @@index([event_name, occurred_at], map: "analytics_events_name_time_idx")
-  @@index([user_id, occurred_at], map: "analytics_events_user_time_idx", where: raw("(user_id IS NOT NULL)"))
+  @@index([eventName, occurredAt], map: "analytics_events_name_time_idx")
+  @@index([userId, occurredAt], map: "analytics_events_user_time_idx", where: raw("(user_id IS NOT NULL)"))
+  @@map("analytics_events")
 }
 
-model app_config {
-  key        String   @id
-  value      Json
-  updated_by String?  @db.Uuid
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
-  users      users?   @relation(fields: [updated_by], references: [id], onUpdate: NoAction)
-}
+model AppConfig {
+  key       String   @id
+  value     Json
+  updatedBy String?  @map("updated_by") @db.Uuid
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  user      User?    @relation(fields: [updatedBy], references: [id], onUpdate: NoAction)
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model auth_sessions {
-  id                          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id                     String    @db.Uuid
-  refresh_token_hash          String    @unique
-  previous_refresh_token_hash String?   @unique
-  rotated_at                  DateTime? @db.Timestamptz(6)
-  device_label                String?
-  platform                    String?
-  app_version                 String?
-  ip_hash                     String?
-  user_agent_hash             String?
-  expires_at                  DateTime  @db.Timestamptz(6)
-  revoked_at                  DateTime? @db.Timestamptz(6)
-  revoked_reason              String?
-  created_at                  DateTime  @default(now()) @db.Timestamptz(6)
-  last_used_at                DateTime  @default(now()) @db.Timestamptz(6)
-  users                       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([user_id], map: "auth_sessions_user_idx")
+  @@map("app_config")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model data_exports {
-  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id      String             @db.Uuid
-  status       data_export_status @default(PENDING)
-  storage_key  String?
-  error_code   String?
-  requested_at DateTime           @default(now()) @db.Timestamptz(6)
-  completed_at DateTime?          @db.Timestamptz(6)
-  expires_at   DateTime?          @db.Timestamptz(6)
-  users        users              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model AuthSession {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                   String    @map("user_id") @db.Uuid
+  refreshTokenHash         String    @unique @map("refresh_token_hash")
+  previousRefreshTokenHash String?   @unique @map("previous_refresh_token_hash")
+  rotatedAt                DateTime? @map("rotated_at") @db.Timestamptz(6)
+  deviceLabel              String?   @map("device_label")
+  platform                 String?
+  appVersion               String?   @map("app_version")
+  ipHash                   String?   @map("ip_hash")
+  userAgentHash            String?   @map("user_agent_hash")
+  expiresAt                DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt                DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedReason            String?   @map("revoked_reason")
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastUsedAt               DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(6)
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([user_id, requested_at(sort: Desc)], map: "data_exports_user_idx")
+  @@index([userId], map: "auth_sessions_user_idx")
+  @@map("auth_sessions")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model email_verification_codes {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id    String    @db.Uuid
-  code_hash  String
-  attempts   Int       @default(0)
-  expires_at DateTime  @db.Timestamptz(6)
-  used_at    DateTime? @db.Timestamptz(6)
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model DataExport {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  status      DataExportStatus @default(PENDING)
+  storageKey  String?          @map("storage_key")
+  errorCode   String?          @map("error_code")
+  requestedAt DateTime         @default(now()) @map("requested_at") @db.Timestamptz(6)
+  completedAt DateTime?        @map("completed_at") @db.Timestamptz(6)
+  expiresAt   DateTime?        @map("expires_at") @db.Timestamptz(6)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([user_id, created_at(sort: Desc)], map: "email_verification_codes_user_idx")
+  @@index([userId, requestedAt(sort: Desc)], map: "data_exports_user_idx")
+  @@map("data_exports")
 }
 
-model experiment_assignments {
-  user_id        String   @db.Uuid
-  experiment_key String
-  variant        String
-  assigned_at    DateTime @default(now()) @db.Timestamptz(6)
-  users          users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model EmailVerificationCode {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  codeHash  String    @map("code_hash")
+  attempts  Int       @default(0)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@id([user_id, experiment_key])
+  @@index([userId, createdAt(sort: Desc)], map: "email_verification_codes_user_idx")
+  @@map("email_verification_codes")
 }
 
-model feature_flags {
+model ExperimentAssignment {
+  userId        String   @map("user_id") @db.Uuid
+  experimentKey String   @map("experiment_key")
+  variant       String
+  assignedAt    DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, experimentKey])
+  @@map("experiment_assignments")
+}
+
+model FeatureFlag {
   key         String   @id
   value       Json
   description String?
-  updated_by  String?  @db.Uuid
-  updated_at  DateTime @default(now()) @db.Timestamptz(6)
-  users       users?   @relation(fields: [updated_by], references: [id], onUpdate: NoAction)
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  user        User?    @relation(fields: [updatedBy], references: [id], onUpdate: NoAction)
+
+  @@map("feature_flags")
 }
 
-model idempotency_keys {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id         String?  @db.Uuid
-  scope           String
-  idempotency_key String
-  request_hash    String
-  response_status Int?
-  response_body   Json?
-  expires_at      DateTime @db.Timestamptz(6)
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
-  users           users?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model IdempotencyKey {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String?  @map("user_id") @db.Uuid
+  scope          String
+  idempotencyKey String   @map("idempotency_key")
+  requestHash    String   @map("request_hash")
+  responseStatus Int?     @map("response_status")
+  responseBody   Json?    @map("response_body")
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([user_id, scope, idempotency_key])
-  @@index([expires_at], map: "idempotency_keys_expiry_idx")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model maintenance_items {
-  id                    String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cost_profile_id       String                @db.Uuid
-  name                  String
-  cost                  Decimal               @db.Decimal(18, 6)
-  interval_km           Decimal               @db.Decimal(18, 6)
-  enabled               Boolean               @default(true)
-  created_at            DateTime              @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime              @default(now()) @db.Timestamptz(6)
-  vehicle_cost_profiles vehicle_cost_profiles @relation(fields: [cost_profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([cost_profile_id], map: "maintenance_items_profile_idx")
-}
-
-model oauth_identities {
-  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id           String         @db.Uuid
-  provider          oauth_provider
-  provider_subject  String
-  email_at_provider String?
-  created_at        DateTime       @default(now()) @db.Timestamptz(6)
-  users             users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@unique([provider, provider_subject])
-}
-
-model password_reset_tokens {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id    String    @db.Uuid
-  token_hash String    @unique
-  expires_at DateTime  @db.Timestamptz(6)
-  used_at    DateTime? @db.Timestamptz(6)
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model quote_cost_breakdowns {
-  quote_id                   String   @id @db.Uuid
-  fuel_cost                  Decimal  @db.Decimal(24, 10)
-  maintenance_cost           Decimal  @db.Decimal(24, 10)
-  tire_cost                  Decimal  @db.Decimal(24, 10)
-  depreciation_cost          Decimal  @db.Decimal(24, 10)
-  fixed_cost                 Decimal  @db.Decimal(24, 10)
-  tolls_cost                 Decimal  @db.Decimal(24, 10)
-  parking_cost               Decimal  @db.Decimal(24, 10)
-  other_cost                 Decimal  @db.Decimal(24, 10)
-  driver_target_compensation Decimal  @db.Decimal(24, 10)
-  created_at                 DateTime @default(now()) @db.Timestamptz(6)
-  quotes                     quotes   @relation(fields: [quote_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@unique([userId, scope, idempotencyKey])
+  @@index([expiresAt], map: "idempotency_keys_expiry_idx")
+  @@map("idempotency_keys")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model quote_decisions {
-  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  quote_id    String               @unique @db.Uuid
-  action      real_decision_action
-  final_price Decimal?             @db.Decimal(18, 6)
-  influence   influence_answer
-  notes       String?
-  decided_at  DateTime             @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime             @default(now()) @db.Timestamptz(6)
-  quotes      quotes               @relation(fields: [quote_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model MaintenanceItem {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  costProfileId      String             @map("cost_profile_id") @db.Uuid
+  name               String
+  cost               Decimal            @db.Decimal(18, 6)
+  intervalKm         Decimal            @map("interval_km") @db.Decimal(18, 6)
+  enabled            Boolean            @default(true)
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
+  vehicleCostProfile VehicleCostProfile @relation(fields: [costProfileId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([costProfileId], map: "maintenance_items_profile_idx")
+  @@map("maintenance_items")
+}
+
+model OauthIdentity {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  provider        OauthProvider
+  providerSubject String        @map("provider_subject")
+  emailAtProvider String?       @map("email_at_provider")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([provider, providerSubject])
+  @@map("oauth_identities")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("password_reset_tokens")
+}
+
+model QuoteCostBreakdown {
+  quoteId                  String   @id @map("quote_id") @db.Uuid
+  fuelCost                 Decimal  @map("fuel_cost") @db.Decimal(24, 10)
+  maintenanceCost          Decimal  @map("maintenance_cost") @db.Decimal(24, 10)
+  tireCost                 Decimal  @map("tire_cost") @db.Decimal(24, 10)
+  depreciationCost         Decimal  @map("depreciation_cost") @db.Decimal(24, 10)
+  fixedCost                Decimal  @map("fixed_cost") @db.Decimal(24, 10)
+  tollsCost                Decimal  @map("tolls_cost") @db.Decimal(24, 10)
+  parkingCost              Decimal  @map("parking_cost") @db.Decimal(24, 10)
+  otherCost                Decimal  @map("other_cost") @db.Decimal(24, 10)
+  driverTargetCompensation Decimal  @map("driver_target_compensation") @db.Decimal(24, 10)
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  quote                    Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("quote_cost_breakdowns")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model quote_usage_counters {
-  user_id    String   @db.Uuid
-  period_key String
-  used       Int      @default(0)
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
-  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model QuoteDecision {
+  id         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quoteId    String             @unique @map("quote_id") @db.Uuid
+  action     RealDecisionAction
+  finalPrice Decimal?           @map("final_price") @db.Decimal(18, 6)
+  influence  InfluenceAnswer
+  notes      String?
+  decidedAt  DateTime           @default(now()) @map("decided_at") @db.Timestamptz(6)
+  updatedAt  DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
+  quote      Quote              @relation(fields: [quoteId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@id([user_id, period_key])
+  @@map("quote_decisions")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model quotes {
-  id                        String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id                   String                         @db.Uuid
-  vehicle_id                String                         @db.Uuid
-  quote_request_id          String                         @unique @db.Uuid
-  pricing_engine_version    String
-  routing_provider          String
-  routing_profile           String
-  return_mode               String                         @default("SYMMETRIC_ESTIMATE")
-  currency                  String                         @default("USD") @db.Char(3)
-  pricing_input_snapshot    Json
-  pickup_lat                Decimal?                       @db.Decimal(10, 7)
-  pickup_lng                Decimal?                       @db.Decimal(10, 7)
-  destination_lat           Decimal?                       @db.Decimal(10, 7)
-  destination_lng           Decimal?                       @db.Decimal(10, 7)
-  pickup_label              String?
-  destination_label         String?
-  exact_location_expires_at DateTime?                      @db.Timestamptz(6)
-  pickup_distance_meters    Int                            @default(0)
-  pickup_duration_seconds   Int                            @default(0)
-  trip_distance_meters      Int
-  trip_duration_seconds     Int
-  waiting_seconds           Int                            @default(0)
-  empty_return_probability  Decimal                        @db.Decimal(9, 6)
-  offered_price             Decimal?                       @db.Decimal(18, 6)
-  tolls_amount              Decimal                        @default(0) @db.Decimal(18, 6)
-  parking_amount            Decimal                        @default(0) @db.Decimal(18, 6)
-  other_direct_cost_amount  Decimal                        @default(0) @db.Decimal(18, 6)
-  operating_cost_raw        Decimal                        @db.Decimal(24, 10)
-  floor_price_raw           Decimal                        @db.Decimal(24, 10)
-  minimum_price_raw         Decimal                        @db.Decimal(24, 10)
-  recommended_price_raw     Decimal                        @db.Decimal(24, 10)
-  floor_price               Decimal                        @db.Decimal(18, 2)
-  minimum_price             Decimal                        @db.Decimal(18, 2)
-  recommended_price         Decimal                        @db.Decimal(18, 2)
-  earnings_per_hour_raw     Decimal?                       @db.Decimal(24, 10)
-  earnings_per_km_raw       Decimal?                       @db.Decimal(24, 10)
-  recommendation            quote_decision_recommendation?
-  created_at                DateTime                       @default(now()) @db.Timestamptz(6)
-  quote_cost_breakdowns     quote_cost_breakdowns?
-  quote_decisions           quote_decisions?
-  users                     users                          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  vehicles                  vehicles                       @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+model QuoteUsageCounter {
+  userId    String   @map("user_id") @db.Uuid
+  periodKey String   @map("period_key")
+  used      Int      @default(0)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([exact_location_expires_at], map: "quotes_location_expiry_idx", where: raw("(exact_location_expires_at IS NOT NULL)"))
-  @@index([user_id, created_at(sort: Desc)], map: "quotes_user_created_idx")
+  @@id([userId, periodKey])
+  @@map("quote_usage_counters")
 }
 
-model subscription_transactions {
-  id                      String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  subscription_id         String?               @db.Uuid
-  provider                subscription_provider
-  provider_transaction_id String
-  event_type              String
-  raw_payload_hash        String
-  occurred_at             DateTime              @db.Timestamptz(6)
-  processed_at            DateTime              @default(now()) @db.Timestamptz(6)
-  subscriptions           subscriptions?        @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model Quote {
+  id                     String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                 String                       @map("user_id") @db.Uuid
+  vehicleId              String                       @map("vehicle_id") @db.Uuid
+  quoteRequestId         String                       @unique @map("quote_request_id") @db.Uuid
+  pricingEngineVersion   String                       @map("pricing_engine_version")
+  routingProvider        String                       @map("routing_provider")
+  routingProfile         String                       @map("routing_profile")
+  returnMode             String                       @default("SYMMETRIC_ESTIMATE") @map("return_mode")
+  currency               String                       @default("USD") @db.Char(3)
+  pricingInputSnapshot   Json                         @map("pricing_input_snapshot")
+  pickupLat              Decimal?                     @map("pickup_lat") @db.Decimal(10, 7)
+  pickupLng              Decimal?                     @map("pickup_lng") @db.Decimal(10, 7)
+  destinationLat         Decimal?                     @map("destination_lat") @db.Decimal(10, 7)
+  destinationLng         Decimal?                     @map("destination_lng") @db.Decimal(10, 7)
+  pickupLabel            String?                      @map("pickup_label")
+  destinationLabel       String?                      @map("destination_label")
+  exactLocationExpiresAt DateTime?                    @map("exact_location_expires_at") @db.Timestamptz(6)
+  pickupDistanceMeters   Int                          @default(0) @map("pickup_distance_meters")
+  pickupDurationSeconds  Int                          @default(0) @map("pickup_duration_seconds")
+  tripDistanceMeters     Int                          @map("trip_distance_meters")
+  tripDurationSeconds    Int                          @map("trip_duration_seconds")
+  waitingSeconds         Int                          @default(0) @map("waiting_seconds")
+  emptyReturnProbability Decimal                      @map("empty_return_probability") @db.Decimal(9, 6)
+  offeredPrice           Decimal?                     @map("offered_price") @db.Decimal(18, 6)
+  tollsAmount            Decimal                      @default(0) @map("tolls_amount") @db.Decimal(18, 6)
+  parkingAmount          Decimal                      @default(0) @map("parking_amount") @db.Decimal(18, 6)
+  otherDirectCostAmount  Decimal                      @default(0) @map("other_direct_cost_amount") @db.Decimal(18, 6)
+  operatingCostRaw       Decimal                      @map("operating_cost_raw") @db.Decimal(24, 10)
+  floorPriceRaw          Decimal                      @map("floor_price_raw") @db.Decimal(24, 10)
+  minimumPriceRaw        Decimal                      @map("minimum_price_raw") @db.Decimal(24, 10)
+  recommendedPriceRaw    Decimal                      @map("recommended_price_raw") @db.Decimal(24, 10)
+  floorPrice             Decimal                      @map("floor_price") @db.Decimal(18, 2)
+  minimumPrice           Decimal                      @map("minimum_price") @db.Decimal(18, 2)
+  recommendedPrice       Decimal                      @map("recommended_price") @db.Decimal(18, 2)
+  earningsPerHourRaw     Decimal?                     @map("earnings_per_hour_raw") @db.Decimal(24, 10)
+  earningsPerKmRaw       Decimal?                     @map("earnings_per_km_raw") @db.Decimal(24, 10)
+  recommendation         QuoteDecisionRecommendation?
+  createdAt              DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+  quoteCostBreakdown     QuoteCostBreakdown?
+  quoteDecision          QuoteDecision?
+  user                   User                         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  vehicle                Vehicle                      @relation(fields: [vehicleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([provider, provider_transaction_id, event_type])
+  @@index([exactLocationExpiresAt], map: "quotes_location_expiry_idx", where: raw("(exact_location_expires_at IS NOT NULL)"))
+  @@index([userId, createdAt(sort: Desc)], map: "quotes_user_created_idx")
+  @@map("quotes")
 }
 
-model subscriptions {
-  id                        String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id                   String                      @db.Uuid
-  provider                  subscription_provider
-  product_id                String
-  provider_subscription_id  String
-  status                    subscription_status
-  entitlement_active        Boolean                     @default(false)
-  starts_at                 DateTime?                   @db.Timestamptz(6)
-  current_period_end        DateTime?                   @db.Timestamptz(6)
-  updated_at                DateTime                    @default(now()) @db.Timestamptz(6)
-  created_at                DateTime                    @default(now()) @db.Timestamptz(6)
-  subscription_transactions subscription_transactions[]
-  users                     users                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model SubscriptionTransaction {
+  id                    String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriptionId        String?              @map("subscription_id") @db.Uuid
+  provider              SubscriptionProvider
+  providerTransactionId String               @map("provider_transaction_id")
+  eventType             String               @map("event_type")
+  rawPayloadHash        String               @map("raw_payload_hash")
+  occurredAt            DateTime             @map("occurred_at") @db.Timestamptz(6)
+  processedAt           DateTime             @default(now()) @map("processed_at") @db.Timestamptz(6)
+  subscription          Subscription?        @relation(fields: [subscriptionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([provider, provider_subscription_id])
-  @@index([user_id], map: "subscriptions_user_idx")
+  @@unique([provider, providerTransactionId, eventType])
+  @@map("subscription_transactions")
+}
+
+model Subscription {
+  id                       String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                   String                    @map("user_id") @db.Uuid
+  provider                 SubscriptionProvider
+  productId                String                    @map("product_id")
+  providerSubscriptionId   String                    @map("provider_subscription_id")
+  status                   SubscriptionStatus
+  entitlementActive        Boolean                   @default(false) @map("entitlement_active")
+  startsAt                 DateTime?                 @map("starts_at") @db.Timestamptz(6)
+  currentPeriodEnd         DateTime?                 @map("current_period_end") @db.Timestamptz(6)
+  updatedAt                DateTime                  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt                DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  subscriptionTransactions SubscriptionTransaction[]
+  user                     User                      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([provider, providerSubscriptionId])
+  @@index([userId], map: "subscriptions_user_idx")
+  @@map("subscriptions")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
-model users {
-  id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email                    String
-  email_verified_at        DateTime?                  @db.Timestamptz(6)
-  password_hash            String?
-  display_name             String?
-  role                     user_role                  @default(USER)
-  country_code             String                     @default("EC") @db.Char(2)
-  currency                 String                     @default("USD") @db.Char(3)
-  timezone                 String                     @default("America/Guayaquil")
-  analytics_opt_out        Boolean                    @default(false)
-  status                   String                     @default("ACTIVE")
-  created_at               DateTime                   @default(now()) @db.Timestamptz(6)
-  updated_at               DateTime                   @default(now()) @db.Timestamptz(6)
-  deleted_at               DateTime?                  @db.Timestamptz(6)
-  admin_audit_logs         admin_audit_logs[]
-  analytics_events         analytics_events[]
-  app_config               app_config[]
-  auth_sessions            auth_sessions[]
-  data_exports             data_exports[]
-  email_verification_codes email_verification_codes[]
-  experiment_assignments   experiment_assignments[]
-  feature_flags            feature_flags[]
-  idempotency_keys         idempotency_keys[]
-  oauth_identities         oauth_identities[]
-  password_reset_tokens    password_reset_tokens[]
-  quote_usage_counters     quote_usage_counters[]
-  quotes                   quotes[]
-  subscriptions            subscriptions[]
-  vehicles                 vehicles?
+model User {
+  id                     String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                  String
+  emailVerifiedAt        DateTime?               @map("email_verified_at") @db.Timestamptz(6)
+  passwordHash           String?                 @map("password_hash")
+  displayName            String?                 @map("display_name")
+  role                   UserRole                @default(USER)
+  countryCode            String                  @default("EC") @map("country_code") @db.Char(2)
+  currency               String                  @default("USD") @db.Char(3)
+  timezone               String                  @default("America/Guayaquil")
+  analyticsOptOut        Boolean                 @default(false) @map("analytics_opt_out")
+  status                 String                  @default("ACTIVE")
+  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime                @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt              DateTime?               @map("deleted_at") @db.Timestamptz(6)
+  adminAuditLogs         AdminAuditLog[]
+  analyticsEvents        AnalyticsEvent[]
+  appConfig              AppConfig[]
+  authSessions           AuthSession[]
+  dataExports            DataExport[]
+  emailVerificationCodes EmailVerificationCode[]
+  experimentAssignments  ExperimentAssignment[]
+  featureFlags           FeatureFlag[]
+  idempotencyKeys        IdempotencyKey[]
+  oauthIdentities        OauthIdentity[]
+  passwordResetTokens    PasswordResetToken[]
+  quoteUsageCounters     QuoteUsageCounter[]
+  quotes                 Quote[]
+  subscriptions          Subscription[]
+  vehicles               Vehicle[]
+
+  @@map("users")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model vehicle_cost_profiles {
-  id                       String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  vehicle_id               String              @unique(map: "one_active_cost_profile_per_vehicle", where: raw("(is_active = true)")) @db.Uuid
-  is_active                Boolean             @default(true)
-  fuel_price_per_gallon    Decimal             @default(0) @db.Decimal(18, 6)
-  tire_set_cost            Decimal             @default(0) @db.Decimal(18, 6)
-  tire_useful_life_km      Decimal?            @db.Decimal(18, 6)
-  monthly_fixed_cost       Decimal             @default(0) @db.Decimal(18, 6)
-  expected_monthly_km      Decimal?            @db.Decimal(18, 6)
-  target_hourly_income     Decimal             @default(0) @db.Decimal(18, 6)
-  platform_commission_rate Decimal             @default(0) @db.Decimal(9, 6)
-  payment_percentage_rate  Decimal             @default(0) @db.Decimal(9, 6)
-  payment_fixed_fee        Decimal             @default(0) @db.Decimal(18, 6)
-  target_profit_margin     Decimal             @default(0) @db.Decimal(9, 6)
-  created_at               DateTime            @default(now()) @db.Timestamptz(6)
-  updated_at               DateTime            @default(now()) @db.Timestamptz(6)
-  maintenance_items        maintenance_items[]
-  vehicles                 vehicles            @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model VehicleCostProfile {
+  id                     String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Tiene un indice unico parcial que vive solo en la migracion SQL (ver contract/db/schema.sql).
+  vehicleId              String            @map("vehicle_id") @db.Uuid
+  isActive               Boolean           @default(true) @map("is_active")
+  fuelPricePerGallon     Decimal           @default(0) @map("fuel_price_per_gallon") @db.Decimal(18, 6)
+  tireSetCost            Decimal           @default(0) @map("tire_set_cost") @db.Decimal(18, 6)
+  tireUsefulLifeKm       Decimal?          @map("tire_useful_life_km") @db.Decimal(18, 6)
+  monthlyFixedCost       Decimal           @default(0) @map("monthly_fixed_cost") @db.Decimal(18, 6)
+  expectedMonthlyKm      Decimal?          @map("expected_monthly_km") @db.Decimal(18, 6)
+  targetHourlyIncome     Decimal           @default(0) @map("target_hourly_income") @db.Decimal(18, 6)
+  platformCommissionRate Decimal           @default(0) @map("platform_commission_rate") @db.Decimal(9, 6)
+  paymentPercentageRate  Decimal           @default(0) @map("payment_percentage_rate") @db.Decimal(9, 6)
+  paymentFixedFee        Decimal           @default(0) @map("payment_fixed_fee") @db.Decimal(18, 6)
+  targetProfitMargin     Decimal           @default(0) @map("target_profit_margin") @db.Decimal(9, 6)
+  createdAt              DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
+  maintenanceItems       MaintenanceItem[]
+  vehicle                Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("vehicle_cost_profiles")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model vehicles {
-  id                            String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id                       String                 @unique(map: "one_default_vehicle_per_user", where: raw("is_default")) @db.Uuid
-  type                          vehicle_type
-  brand                         String?
-  model                         String?
-  year                          Int?
-  fuel_type                     fuel_type
-  fuel_efficiency_km_per_gallon Decimal                @db.Decimal(18, 6)
-  current_value                 Decimal                @default(0) @db.Decimal(18, 6)
-  expected_residual_value       Decimal                @default(0) @db.Decimal(18, 6)
-  remaining_useful_life_km      Decimal?               @db.Decimal(18, 6)
-  is_default                    Boolean                @default(false)
-  archived_at                   DateTime?              @db.Timestamptz(6)
-  created_at                    DateTime               @default(now()) @db.Timestamptz(6)
-  updated_at                    DateTime               @default(now()) @db.Timestamptz(6)
-  quotes                        quotes[]
-  vehicle_cost_profiles         vehicle_cost_profiles?
-  users                         users                  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model Vehicle {
+  id                        String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Tiene un indice unico parcial que vive solo en la migracion SQL (ver contract/db/schema.sql).
+  userId                    String               @map("user_id") @db.Uuid
+  type                      VehicleType
+  brand                     String?
+  model                     String?
+  year                      Int?
+  fuelType                  FuelType             @map("fuel_type")
+  fuelEfficiencyKmPerGallon Decimal              @map("fuel_efficiency_km_per_gallon") @db.Decimal(18, 6)
+  currentValue              Decimal              @default(0) @map("current_value") @db.Decimal(18, 6)
+  expectedResidualValue     Decimal              @default(0) @map("expected_residual_value") @db.Decimal(18, 6)
+  remainingUsefulLifeKm     Decimal?             @map("remaining_useful_life_km") @db.Decimal(18, 6)
+  isDefault                 Boolean              @default(false) @map("is_default")
+  archivedAt                DateTime?            @map("archived_at") @db.Timestamptz(6)
+  createdAt                 DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime             @default(now()) @map("updated_at") @db.Timestamptz(6)
+  quotes                    Quote[]
+  vehicleCostProfiles       VehicleCostProfile[]
+  user                      User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([user_id], map: "vehicles_user_idx")
+  @@index([userId], map: "vehicles_user_idx")
+  @@map("vehicles")
 }
 
-enum data_export_status {
+enum DataExportStatus {
   PENDING
   PROCESSING
   READY
   FAILED
   EXPIRED
+
+  @@map("data_export_status")
 }
 
-enum fuel_type {
+enum FuelType {
   GASOLINE
   DIESEL
   HYBRID
+
+  @@map("fuel_type")
 }
 
-enum influence_answer {
+enum InfluenceAnswer {
   YES
   NO
   UNSURE
+
+  @@map("influence_answer")
 }
 
-enum oauth_provider {
+enum OauthProvider {
   GOOGLE
   APPLE
+
+  @@map("oauth_provider")
 }
 
-enum quote_decision_recommendation {
+enum QuoteDecisionRecommendation {
   ACCEPT
   NEGOTIATE
   REJECT
+
+  @@map("quote_decision_recommendation")
 }
 
-enum real_decision_action {
+enum RealDecisionAction {
   ACCEPTED_ORIGINAL_OFFER
   NEGOTIATED_AND_ACCEPTED
   REJECTED
   CANCELLED_BY_OTHER_PARTY
   UNKNOWN
+
+  @@map("real_decision_action")
 }
 
-enum subscription_provider {
+enum SubscriptionProvider {
   APPLE
   GOOGLE
+
+  @@map("subscription_provider")
 }
 
-enum subscription_status {
+enum SubscriptionStatus {
   ACTIVE
   GRACE
   CANCELLED
   EXPIRED
   REFUNDED
+
+  @@map("subscription_status")
 }
 
-enum user_role {
+enum UserRole {
   USER
   SUPPORT
   ADMIN
+
+  @@map("user_role")
 }
 
-enum vehicle_type {
+enum VehicleType {
   MOTORCYCLE
   CAR
+
+  @@map("vehicle_type")
 }
